@@ -1,0 +1,13 @@
+{
+    "language": "en",
+    "hotkey": "ctrl+shift+space",
+    "auto_enter": false,
+    "paste_delay": 0.3,
+    "beep_on_ready": true,
+    "exit_hotkey": "ctrl+shift+q",
+    "whisper_model": "medium",
+    "silence_threshold": 500,
+    "silence_duration": 1.2,
+    "max_record_seconds": 60,
+    "enable_multilingual": true
+}
