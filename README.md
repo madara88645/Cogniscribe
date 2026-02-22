@@ -90,17 +90,20 @@ Customize Cogniscribe's behavior by editing `config.json`:
 
 ```json
 {
-    "language": "en",                  // Language code (en, tr, de, fr, etc.)
-    "hotkey": "ctrl+shift+space",      // Primary recording hotkey
-    "auto_enter": false,               // Auto-press Enter after pasting
-    "paste_delay": 0.3,                // Delay before pasting (seconds)
-    "beep_on_ready": true,             // Beep sound when ready to record
-    "exit_hotkey": "ctrl+shift+q",     // Hotkey to exit application
-    "whisper_model": "base",           // AI model size (tiny, base, small, medium)
-    "silence_threshold": 500,          // Silence detection threshold
-    "silence_duration": 1.2,           // Silence duration to stop recording (seconds)
-    "max_record_seconds": 60,          // Maximum recording duration
-    "enable_multilingual": true        // Enable multi-language support
+    "language": "en",
+    "hotkey": "ctrl+shift+space",
+    "auto_enter": false,
+    "paste_delay": 0.5,
+    "beep_on_ready": true,
+    "exit_hotkey": "ctrl+shift+q",
+    
+    "whisper_model": "base",
+    "silence_threshold": 500,
+    "silence_duration": 1.2,
+    "max_record_seconds": 60,
+    "min_record_seconds": 0.3,
+    "enable_multilingual": true,
+    "post_recording_delay": 0.5
 }
 ```
 
@@ -108,45 +111,140 @@ Customize Cogniscribe's behavior by editing `config.json`:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `language` | string | `"en"` | Language code for speech recognition (e.g., `"en"`, `"tr"`, `"de"`, `"fr"`) |
-| `hotkey` | string | `"ctrl+shift+space"` | Hotkey combination to trigger recording |
-| `auto_enter` | boolean | `false` | Automatically press Enter after pasting text |
-| `paste_delay` | float | `0.3` | Delay (in seconds) before pasting transcribed text |
-| `beep_on_ready` | boolean | `true` | Play beep sound when recording starts/stops |
-| `exit_hotkey` | string | `"ctrl+shift+q"` | Hotkey to exit the application |
-| `whisper_model` | string | `"base"` | Whisper model size: `"tiny"` (fast), `"base"`, `"small"`, `"medium"` (accurate) |
-| `silence_threshold` | int | `500` | Silence detection threshold (lower = more sensitive) |
-| `silence_duration` | float | `1.2` | Seconds of silence needed to auto-stop recording |
-| `max_record_seconds` | int | `60` | Maximum recording duration in seconds |
-| `enable_multilingual` | boolean | `true` | Enable automatic language detection |
+| `language` | string | `"en"` | Language code (e.g., `"en"`, `"tr"`, `"de"`, `"fr"`, `"ja"`) |
+| `hotkey` | string | `"ctrl+shift+space"` | Hotkey to trigger recording |
+| `auto_enter` | boolean | `false` | Auto-press Enter after pasting |
+| `paste_delay` | float | `0.5` | Delay before pasting (seconds) - increased to prevent duplicate pastes |
+| `beep_on_ready` | boolean | `true` | Audio feedback when recording starts |
+| `exit_hotkey` | string | `"ctrl+shift+q"` | Hotkey to exit application |
+| `whisper_model` | string | `"base"` | Model size: `"tiny"` (fastest), `"base"` (balanced), `"small"`, `"medium"` (most accurate) |
+| `silence_threshold` | int | `500` | RMS threshold for silence detection (lower = more sensitive) |
+| `silence_duration` | float | `1.2` | Seconds of silence to auto-stop recording |
+| `max_record_seconds` | int | `60` | Maximum recording duration |
+| `min_record_seconds` | float | `0.3` | Minimum recording duration (prevents accidental short triggers) |
+| `enable_multilingual` | boolean | `true` | Auto-detect language from speech |
+| `post_recording_delay` | float | `0.5` | Delay after recording before processing (stabilizes clipboard) |
+
+### Recommended Settings for Quality
+
+**For Best Accuracy** (slower, uses more RAM):
+```json
+{
+    "whisper_model": "small",
+    "silence_threshold": 400,
+    "paste_delay": 0.8,
+    "post_recording_delay": 1.0
+}
+```
+
+**For Speed + Quality** (balanced):
+```json
+{
+    "whisper_model": "base",
+    "silence_threshold": 500,
+    "paste_delay": 0.5,
+    "post_recording_delay": 0.5
+}
+```
+
+**For Noisy Environments**:
+```json
+{
+    "silence_threshold": 800,
+    "silence_duration": 2.0,
+    "min_record_seconds": 0.5
+}
+```
+
+**To Prevent Duplicate Pastes**:
+Increase `paste_delay` to `0.8` or `1.0`:
+```json
+{
+    "paste_delay": 1.0,
+    "post_recording_delay": 0.5
+}
+```
 
 ### Supported Languages
 
-Cogniscribe supports 100+ languages. Here are some common ones:
+Cogniscribe uses Whisper and supports 100+ languages:
 
 ```
-Arabic (ar), Chinese Simplified (zh), Chinese Traditional (zh-TW),
-Dutch (nl), English (en), French (fr), German (de), Hindi (hi),
-Indonesian (id), Italian (it), Japanese (ja), Korean (ko),
-Polish (pl), Portuguese (pt), Russian (ru), Spanish (es),
-Swedish (sv), Thai (th), Turkish (tr), Ukrainian (uk), Vietnamese (vi)
+Arabic (ar), Bengali (bn), Chinese Simplified (zh), Chinese Traditional (zh-TW),
+Dutch (nl), English (en), French (fr), German (de), Greek (el), Hindi (hi),
+Hungarian (hu), Indonesian (id), Italian (it), Japanese (ja), Korean (ko),
+Marathi (mr), Polish (pl), Portuguese (pt), Russian (ru), Spanish (es),
+Swedish (sv), Tamil (ta), Telugu (te), Thai (th), Turkish (tr), 
+Ukrainian (uk), Urdu (ur), Vietnamese (vi), and more...
 ```
+
+---
+
+## Performance & Troubleshooting
+
+### Improving Transcription Accuracy
+
+1. **Upgrade the Whisper Model** — Use larger models for better accuracy:
+   ```json
+   "whisper_model": "small"    // Better than base, uses ~475MB
+   "whisper_model": "medium"   // Highest accuracy, uses ~1.5GB
+   ```
+
+2. **Reduce Background Noise** — Work in a quiet environment or wear a noise-canceling headset
+
+3. **Speak Clearly** — Enunciate words clearly and at a normal pace (not too fast)
+
+4. **Adjust Silence Detection**:
+   - For quiet environments: Lower `silence_threshold` (300-400)
+   - For noisy environments: Raise `silence_threshold` (600-1000)
+
+### Fixing Duplicate Paste Issues
+
+**Problem: Text pastes multiple times**
+- **Solution 1**: Increase `paste_delay` to `0.8-1.0`
+- **Solution 2**: Increase `post_recording_delay` to avoid clipboard conflicts
+- **Solution 3**: Don't tap hotkey repeatedly; wait for beep before speaking
+
+**Problem: Text doesn't paste**
+- Ensure target application is in focus when pasting
+- Some applications may block automated input; check application permissions
+- Try increasing `paste_delay`
+
+### Fixing Speech Recognition Issues
+
+**Problem: "Transcription failed" errors**
+- Check internet connection (some models require it initially for download)
+- Ensure microphone is properly connected and set as default device in Windows Sound Settings
+- Try `"whisper_model": "tiny"` first to verify setup works
+
+**Problem: Wrong language detected**
+- Set `"enable_multilingual": false` and specify language code
+- For Turkish: `"language": "tr"`
+- For Spanish: `"language": "es"`
+
+**Problem: Background noise interference**
+- Increase `silence_threshold` to 800-1200
+- Work in a quieter environment
+- Use `"silence_duration": 2.0` for longer silence periods
 
 ---
 
 ## Tips & Tricks
 
-🎯 **VS Code Integration** — Open your code editor, click in the editor, press `Ctrl+Shift+Space`, and speak your code comments or text  
+🎯 **VS Code Integration** — Open editor, click input area, press `Ctrl+Shift+Space`, speak your code  
 
-🎯 **Chat Applications** — Works with Discord, Teams, Slack, Gmail, and any web application  
+🎯 **Chat Applications** — Works with Discord, Teams, Slack, Gmail, browser-based chat  
 
-🎯 **Auto-Confirm** — Set `"auto_enter": true` to automatically send messages after transcription  
+🎯 **Auto-Send Messages** — Set `"auto_enter": true` to auto-press Enter after pasting  
 
-🎯 **Noisy Environments** — Adjust `silence_threshold` (300-4000) to filter out background noise  
+🎯 **Keyboard Shortcuts** — Change hotkey in `config.json` to any key combo (e.g., `"alt+space"`)  
 
-🎯 **Larger Model for Better Accuracy** — Change `"whisper_model"` to `"small"` or `"medium"` (requires more VRAM)  
+🎯 **Model Selection**:
+   - Use `"tiny"` for fast feedback on low-end machines
+   - Use `"base"` for balanced speed/accuracy (default)
+   - Use `"small"` or `"medium"` for best accuracy on powerful machines
 
-🎯 **Customize Paste Timing** — Increase `paste_delay` if text appears before cursor focus is ready  
+🎯 **Multiple Languages** — Leave `"enable_multilingual": true` to auto-detect speech language
 
 ---
 

@@ -2,12 +2,15 @@
     "language": "en",
     "hotkey": "ctrl+shift+space",
     "auto_enter": false,
-    "paste_delay": 0.3,
+    "paste_delay": 0.5,
     "beep_on_ready": true,
     "exit_hotkey": "ctrl+shift+q",
-    "whisper_model": "medium",
+    
+    "whisper_model": "base",
     "silence_threshold": 500,
     "silence_duration": 1.2,
     "max_record_seconds": 60,
-    "enable_multilingual": true
+    "min_record_seconds": 0.3,
+    "enable_multilingual": true,
+    "post_recording_delay": 0.5
 }
