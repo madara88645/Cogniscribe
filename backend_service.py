@@ -1,12 +1,9 @@
 import json
-import os
-import queue
 import sys
 import threading
 import time
 import traceback
 import uuid
-import winsound
 from typing import Any
 
 import keyboard
@@ -19,6 +16,10 @@ from audio_processing import get_rms, preprocess_audio_bytes
 from config_manager import load_config, save_config
 from stt_service import STTService
 
+if sys.platform == "win32":
+    import winsound as _winsound
+else:
+    _winsound = None  # type: ignore[assignment]
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -61,7 +62,9 @@ class BackendService:
             except Exception as exc:
                 self.emit("runtime_error", {"message": f"Invalid JSON: {exc}"})
                 continue
-            threading.Thread(target=self._handle_request, args=(payload,), daemon=True).start()
+            threading.Thread(
+                target=self._handle_request, args=(payload,), daemon=True
+            ).start()
 
     def _handle_request(self, payload: dict[str, Any]) -> None:
         req_id = payload.get("id")
@@ -86,7 +89,9 @@ class BackendService:
                 raise ValueError(f"Unknown method: {method}")
             self.respond(req_id, ok=True, result=result)
         except Exception as exc:
-            self.respond(req_id, ok=False, error={"code": "request_failed", "message": str(exc)})
+            self.respond(
+                req_id, ok=False, error={"code": "request_failed", "message": str(exc)}
+            )
 
     def start_listening(self) -> dict[str, Any]:
         with self.state_lock:
@@ -94,7 +99,9 @@ class BackendService:
                 return {"started": False, "reason": "already_listening"}
             self.is_listening = True
             self.stop_requested.clear()
-            self.listener_thread = threading.Thread(target=self._listen_worker, daemon=True)
+            self.listener_thread = threading.Thread(
+                target=self._listen_worker, daemon=True
+            )
             self.listener_thread.start()
         return {"started": True}
 
@@ -122,24 +129,38 @@ class BackendService:
 
             audio_bytes, duration = self._record_audio(self.config)
             if duration < max(0.12, float(self.config.get("min_record_seconds", 0.12))):
-                self.emit("runtime_error", {"message": "Recording too short", "trace_id": trace_id})
+                self.emit(
+                    "runtime_error",
+                    {"message": "Recording too short", "trace_id": trace_id},
+                )
                 self.emit("status_changed", {"status": "ready", "trace_id": trace_id})
                 self._safe_beep(420, 140)
                 return
 
-            self.emit("status_changed", {"status": "transcribing", "trace_id": trace_id})
+            self.emit(
+                "status_changed", {"status": "transcribing", "trace_id": trace_id}
+            )
             processed = preprocess_audio_bytes(
                 audio_bytes=audio_bytes,
                 sample_rate=SAMPLE_RATE,
                 highpass_hz=float(self.config["audio"].get("highpass_hz", 80)),
-                normalize_target_dbfs=float(self.config["audio"].get("normalize_target_dbfs", -20.0)),
-                noise_suppression=bool(self.config["audio"].get("noise_suppression", False)),
+                normalize_target_dbfs=float(
+                    self.config["audio"].get("normalize_target_dbfs", -20.0)
+                ),
+                noise_suppression=bool(
+                    self.config["audio"].get("noise_suppression", False)
+                ),
             )
 
             result = self.stt.transcribe_audio_bytes(processed, self.config)
             if not result.text:
-                self.emit("status_changed", {"status": "low_conf", "trace_id": trace_id})
-                self.emit("runtime_error", {"message": "No speech detected", "trace_id": trace_id})
+                self.emit(
+                    "status_changed", {"status": "low_conf", "trace_id": trace_id}
+                )
+                self.emit(
+                    "runtime_error",
+                    {"message": "No speech detected", "trace_id": trace_id},
+                )
                 return
 
             allow_low = bool(self.config["stt"].get("allow_low_confidence_paste", True))
@@ -152,7 +173,9 @@ class BackendService:
                 pasted, paste_error = self._paste_text(result.text, self.config)
 
             if not pasted and paste_error:
-                self.emit("runtime_error", {"message": paste_error, "trace_id": trace_id})
+                self.emit(
+                    "runtime_error", {"message": paste_error, "trace_id": trace_id}
+                )
 
             self.emit(
                 "transcript_ready",
@@ -184,10 +207,14 @@ class BackendService:
                 self.emit("status_changed", {"status": "ready", "trace_id": trace_id})
                 self._safe_beep(1200, 100)
             elif can_paste:
-                self.emit("status_changed", {"status": "low_conf", "trace_id": trace_id})
+                self.emit(
+                    "status_changed", {"status": "low_conf", "trace_id": trace_id}
+                )
                 self._safe_beep(950, 100)
             else:
-                self.emit("status_changed", {"status": "low_conf", "trace_id": trace_id})
+                self.emit(
+                    "status_changed", {"status": "low_conf", "trace_id": trace_id}
+                )
                 self._safe_beep(420, 220)
         except Exception as exc:
             self.emit(
@@ -224,10 +251,16 @@ class BackendService:
 
         fallback_threshold = int(cfg.get("silence_threshold", 500))
         min_threshold = int(cfg["audio"].get("min_silence_threshold", 200))
-        adaptive_multiplier = float(cfg["audio"].get("silence_adaptive_multiplier", 2.5))
+        adaptive_multiplier = float(
+            cfg["audio"].get("silence_adaptive_multiplier", 2.5)
+        )
         calibration_chunks = max(
             1,
-            int(float(cfg["audio"].get("silence_calibration_seconds", 0.25)) * SAMPLE_RATE / CHUNK),
+            int(
+                float(cfg["audio"].get("silence_calibration_seconds", 0.25))
+                * SAMPLE_RATE
+                / CHUNK
+            ),
         )
 
         calibrated_threshold = fallback_threshold
@@ -248,7 +281,9 @@ class BackendService:
                         calibration_values.append(rms)
                     if calibration_values:
                         ambient = float(np.percentile(calibration_values, 90))
-                        calibrated_threshold = int(max(min_threshold, ambient * adaptive_multiplier))
+                        calibrated_threshold = int(
+                            max(min_threshold, ambient * adaptive_multiplier)
+                        )
 
                 if rms > calibrated_threshold:
                     silence_counter = 0
@@ -289,11 +324,14 @@ class BackendService:
 
     def _safe_beep(self, freq: int, duration: int) -> None:
         try:
-            winsound.Beep(freq, duration)
+            if _winsound is not None:
+                _winsound.Beep(freq, duration)
         except Exception:
             pass
 
-    def respond(self, req_id: Any, ok: bool, result: Any = None, error: Any = None) -> None:
+    def respond(
+        self, req_id: Any, ok: bool, result: Any = None, error: Any = None
+    ) -> None:
         payload = {
             "type": "response",
             "id": req_id,

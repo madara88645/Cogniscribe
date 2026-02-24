@@ -1,5 +1,4 @@
 import math
-from typing import Optional
 
 import numpy as np
 
@@ -23,7 +22,9 @@ def int16_to_bytes(audio_data: np.ndarray) -> bytes:
     return clipped.tobytes()
 
 
-def highpass_filter(audio_data: np.ndarray, sample_rate: int, cutoff_hz: float) -> np.ndarray:
+def highpass_filter(
+    audio_data: np.ndarray, sample_rate: int, cutoff_hz: float
+) -> np.ndarray:
     if cutoff_hz <= 0:
         return audio_data.astype(np.float32)
     x = audio_data.astype(np.float32)
