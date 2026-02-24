@@ -25,7 +25,7 @@
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "electron": "^32.2.6",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.8.1",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.2",

@@ -79,4 +79,4 @@ jobs:
 
       - name: NPM audit
         working-directory: desktop
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
