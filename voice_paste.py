@@ -65,7 +65,11 @@ def record_audio_with_silence_detection(config: dict) -> tuple[bytes, float]:
     adaptive_multiplier = float(config["audio"].get("silence_adaptive_multiplier", 2.5))
     calibration_chunks = max(
         1,
-        int(float(config["audio"].get("silence_calibration_seconds", 0.25)) * SAMPLE_RATE / CHUNK),
+        int(
+            float(config["audio"].get("silence_calibration_seconds", 0.25))
+            * SAMPLE_RATE
+            / CHUNK
+        ),
     )
     calibration_values = []
     calibrated_threshold = fallback_threshold
@@ -89,7 +93,9 @@ def record_audio_with_silence_detection(config: dict) -> tuple[bytes, float]:
                         calibration_values.append(rms)
                     if calibration_values:
                         ambient = float(np.percentile(calibration_values, 90))
-                        calibrated_threshold = int(max(min_threshold, ambient * adaptive_multiplier))
+                        calibrated_threshold = int(
+                            max(min_threshold, ambient * adaptive_multiplier)
+                        )
                 chunk_idx += 1
 
                 if rms < calibrated_threshold:
@@ -149,7 +155,9 @@ def listen_and_paste(config: dict, stt: STTService):
 
         allow_low_conf = bool(config["stt"].get("allow_low_confidence_paste", True))
         low_conf_floor = float(config["stt"].get("paste_min_confidence_floor", 0.25))
-        if not result.accepted and (not allow_low_conf or result.confidence < low_conf_floor):
+        if not result.accepted and (
+            not allow_low_conf or result.confidence < low_conf_floor
+        ):
             print(f"Low confidence ({result.confidence:.2f}). {result.warning}")
             beep_error()
             return
@@ -209,7 +217,9 @@ def run_continuous(config: dict, stt: STTService):
     print("=" * 60)
     print("Waiting for hotkey...\n")
 
-    keyboard.add_hotkey(hotkey, lambda: threading.Thread(target=on_hotkey, daemon=True).start())
+    keyboard.add_hotkey(
+        hotkey, lambda: threading.Thread(target=on_hotkey, daemon=True).start()
+    )
     keyboard.wait(exit_hotkey)
     print("Voice Paste closed.")
 

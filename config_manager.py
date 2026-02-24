@@ -81,7 +81,7 @@ DEFAULT_CONFIG = {
 }
 
 
-QUALITY_PROFILES = {
+QUALITY_PROFILES: dict[str, Any] = {
     "fast": {"beam_size": 1, "best_of": 1, "temperature": [0.0], "vad_filter": True},
     "balanced": {
         "beam_size": 3,
@@ -126,11 +126,17 @@ def _migrate_legacy(config: dict[str, Any]) -> dict[str, Any]:
     if "whisper_model" in config and "model_cpu" not in stt:
         stt["model_cpu"] = config["whisper_model"]
     if "whisper_model" in config and "model_gpu" not in stt:
-        stt["model_gpu"] = "large-v3" if config["whisper_model"] in ("small", "medium", "large-v3") else "small"
+        stt["model_gpu"] = (
+            "large-v3"
+            if config["whisper_model"] in ("small", "medium", "large-v3")
+            else "small"
+        )
     if "language" in config and "primary_language" not in stt:
         stt["primary_language"] = _coerce_language(config["language"])
     if "enable_multilingual" in config and "language_mode" not in stt:
-        stt["language_mode"] = "multilingual_auto" if config["enable_multilingual"] else "tr_en_mixed"
+        stt["language_mode"] = (
+            "multilingual_auto" if config["enable_multilingual"] else "tr_en_mixed"
+        )
 
     stt.setdefault("backend", "faster_whisper_local")
     stt.setdefault("device", "auto")
@@ -163,7 +169,9 @@ def _migrate_legacy(config: dict[str, Any]) -> dict[str, Any]:
         ],
     )
     stt["term_hints"] = _sanitize_hints(stt.get("term_hints", []))
-    stt["primary_language"] = _coerce_language(stt.get("primary_language", config.get("language", "tr")))
+    stt["primary_language"] = _coerce_language(
+        stt.get("primary_language", config.get("language", "tr"))
+    )
 
     audio.setdefault("noise_suppression", False)
     audio.setdefault("highpass_hz", 80)
@@ -185,7 +193,9 @@ def _migrate_legacy(config: dict[str, Any]) -> dict[str, Any]:
     ui.setdefault("density", "compact")
     ui.setdefault("motion", "subtle")
 
-    config["language"] = _coerce_language(config.get("language", stt["primary_language"]))
+    config["language"] = _coerce_language(
+        config.get("language", stt["primary_language"])
+    )
     return config
 
 
@@ -201,8 +211,8 @@ def load_config() -> dict[str, Any]:
 
     config = _migrate_legacy(config)
 
-    # Apply environment variable overrides. Use prefix VOICE_PASTE_ and double-underscore
-    # to denote nested keys, e.g. VOICE_PASTE_STT__BACKEND=faster_whisper_local
+    # Apply environment variable overrides. Use prefix VOICE_PASTE_ and
+    # double-underscore to denote nested keys, e.g. VOICE_PASTE_STT__BACKEND=cpu
     def _set_in_path(cfg: dict[str, Any], path: list[str], value: Any) -> None:
         cur = cfg
         for p in path[:-1]:

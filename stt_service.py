@@ -6,7 +6,7 @@ import tempfile
 import time
 import wave
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 import ctranslate2
 from faster_whisper import WhisperModel
@@ -32,8 +32,8 @@ class STTService:
     def __init__(self, config: dict[str, Any], sample_rate: int, channels: int):
         self.sample_rate = sample_rate
         self.channels = channels
-        self._model = None
-        self._loaded_signature = None
+        self._model: Optional[WhisperModel] = None
+        self._loaded_signature: Optional[tuple[str, str, str]] = None
         self._cuda_disabled = False
         self.reload(config)
 
@@ -41,15 +41,22 @@ class STTService:
         stt = config["stt"]
         device = self._resolve_device(stt)
         model_name = stt["model_gpu"] if device == "cuda" else stt["model_cpu"]
-        compute_type = stt["compute_type_gpu"] if device == "cuda" else stt["compute_type_cpu"]
+        compute_type = (
+            stt["compute_type_gpu"] if device == "cuda" else stt["compute_type_cpu"]
+        )
         signature = (model_name, device, compute_type)
 
         if signature == self._loaded_signature and self._model is not None:
             return
 
-        print(f"[STT] Loading model={model_name} device={device} compute_type={compute_type}")
+        print(
+            f"[STT] Loading model={model_name} device={device} "
+            f"compute_type={compute_type}"
+        )
         try:
-            self._model = WhisperModel(model_name, device=device, compute_type=compute_type)
+            self._model = WhisperModel(
+                model_name, device=device, compute_type=compute_type
+            )
             self._loaded_signature = signature
             return
         except Exception as exc:
@@ -61,7 +68,9 @@ class STTService:
         fallback_model = stt["model_cpu"]
         fallback_compute = stt["compute_type_cpu"]
         fallback_sig = (fallback_model, "cpu", fallback_compute)
-        self._model = WhisperModel(fallback_model, device="cpu", compute_type=fallback_compute)
+        self._model = WhisperModel(
+            fallback_model, device="cpu", compute_type=fallback_compute
+        )
         self._loaded_signature = fallback_sig
 
     def _resolve_device(self, stt_cfg: dict[str, Any]) -> str:
@@ -86,9 +95,15 @@ class STTService:
             pass
         return "cpu"
 
-    def transcribe_audio_bytes(self, audio_bytes: bytes, config: dict[str, Any]) -> TranscriptionResult:
+    def transcribe_audio_bytes(
+        self, audio_bytes: bytes, config: dict[str, Any]
+    ) -> TranscriptionResult:
         self.reload(config)
-        duration_audio_sec = len(audio_bytes) / float(self.sample_rate * self.channels * 2)
+        if self._model is None or self._loaded_signature is None:
+            raise RuntimeError("STT model failed to load")
+        duration_audio_sec = len(audio_bytes) / float(
+            self.sample_rate * self.channels * 2
+        )
         start = time.time()
 
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
@@ -103,11 +118,14 @@ class STTService:
 
             language_mode = config["stt"].get("language_mode", "tr_en_mixed")
             primary_language = config["stt"].get("primary_language", "tr")
-            language = None if language_mode == "multilingual_auto" else primary_language
+            language = (
+                None if language_mode == "multilingual_auto" else primary_language
+            )
             hints = config["stt"].get("term_hints", [])
 
             prompt = (
-                "Bu konusma cogunlukla Turkce. Ingilizce teknik terimler, marka ve urun adlarini aynen koru."
+                "Bu konusma cogunlukla Turkce. "
+                "Ingilizce teknik terimler, marka ve urun adlarini aynen koru."
                 if language == "tr"
                 else None
             )
@@ -172,6 +190,8 @@ class STTService:
         prompt: str | None,
         decode: dict[str, Any],
     ) -> dict[str, Any]:
+        if self._model is None:
+            raise RuntimeError("STT model is not loaded")
         segments, _ = self._model.transcribe(
             path,
             language=language,
@@ -184,8 +204,12 @@ class STTService:
         )
         segment_list = list(segments)
         text = " ".join(seg.text.strip() for seg in segment_list).strip()
-        avg_logprob = _mean([getattr(seg, "avg_logprob", None) for seg in segment_list], -2.0)
-        no_speech_prob = _mean([getattr(seg, "no_speech_prob", None) for seg in segment_list], 0.35)
+        avg_logprob = _mean(
+            [getattr(seg, "avg_logprob", None) for seg in segment_list], -2.0
+        )
+        no_speech_prob = _mean(
+            [getattr(seg, "no_speech_prob", None) for seg in segment_list], 0.35
+        )
         confidence = _confidence_score(avg_logprob, no_speech_prob)
         return {
             "text": text,
@@ -194,7 +218,9 @@ class STTService:
             "confidence": confidence,
         }
 
-    def _write_telemetry(self, config: dict[str, Any], result: TranscriptionResult) -> None:
+    def _write_telemetry(
+        self, config: dict[str, Any], result: TranscriptionResult
+    ) -> None:
         telemetry = config.get("telemetry", {})
         if not telemetry.get("enabled", True):
             return

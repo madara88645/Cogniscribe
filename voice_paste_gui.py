@@ -72,74 +72,229 @@ class VoicePasteApp:
     def _setup_styles(self):
         style = ttk.Style(self.root)
         style.theme_use("clam")
-        style.configure("Studio.TCombobox", fieldbackground="#ffffff", background="#ffffff", foreground=THEME["text"], bordercolor=THEME["border"], lightcolor=THEME["border"], darkcolor=THEME["border"], relief="flat", padding=4)
+        style.configure(
+            "Studio.TCombobox",
+            fieldbackground="#ffffff",
+            background="#ffffff",
+            foreground=THEME["text"],
+            bordercolor=THEME["border"],
+            lightcolor=THEME["border"],
+            darkcolor=THEME["border"],
+            relief="flat",
+            padding=4,
+        )
 
     def _build_ui(self):
-        top = tk.Frame(self.root, bg=THEME["panel"], highlightbackground=THEME["border"], highlightthickness=1)
+        top = tk.Frame(
+            self.root,
+            bg=THEME["panel"],
+            highlightbackground=THEME["border"],
+            highlightthickness=1,
+        )
         top.pack(fill="x", padx=16, pady=(16, 10))
 
         title_row = tk.Frame(top, bg=THEME["panel"])
         title_row.pack(fill="x", padx=14, pady=(12, 4))
-        tk.Label(title_row, text="Voice Paste Studio", bg=THEME["panel"], fg=THEME["text"], font=("Georgia", 15, "bold")).pack(side="left")
+        tk.Label(
+            title_row,
+            text="Voice Paste Studio",
+            bg=THEME["panel"],
+            fg=THEME["text"],
+            font=("Georgia", 15, "bold"),
+        ).pack(side="left")
 
         self.pin_var = tk.BooleanVar(value=True)
-        self.pin_btn = tk.Label(title_row, text="PIN", bg=THEME["panel_2"], fg=THEME["text"], font=("Segoe UI", 8, "bold"), padx=8, pady=3, cursor="hand2")
+        self.pin_btn = tk.Label(
+            title_row,
+            text="PIN",
+            bg=THEME["panel_2"],
+            fg=THEME["text"],
+            font=("Segoe UI", 8, "bold"),
+            padx=8,
+            pady=3,
+            cursor="hand2",
+        )
         self.pin_btn.pack(side="right")
         self.pin_btn.bind("<Button-1>", self.toggle_pin)
 
-        subtitle = tk.Label(top, text="TR + EN dictation with local Whisper", bg=THEME["panel"], fg=THEME["muted"], font=("Segoe UI", 9))
+        subtitle = tk.Label(
+            top,
+            text="TR + EN dictation with local Whisper",
+            bg=THEME["panel"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 9),
+        )
         subtitle.pack(anchor="w", padx=14, pady=(0, 12))
 
-        status_box = tk.Frame(self.root, bg=THEME["panel"], highlightbackground=THEME["border"], highlightthickness=1)
+        status_box = tk.Frame(
+            self.root,
+            bg=THEME["panel"],
+            highlightbackground=THEME["border"],
+            highlightthickness=1,
+        )
         status_box.pack(fill="x", padx=16, pady=(0, 10))
 
-        self.status_dot = tk.Canvas(status_box, width=10, height=10, bg=THEME["panel"], highlightthickness=0)
+        self.status_dot = tk.Canvas(
+            status_box, width=10, height=10, bg=THEME["panel"], highlightthickness=0
+        )
         self.status_dot.pack(side="left", padx=(14, 6), pady=12)
         self.status_dot.create_oval(1, 1, 9, 9, fill=THEME["warn"], outline="")
 
-        self.status_label = tk.Label(status_box, text="Model loading...", bg=THEME["panel"], fg=THEME["warn"], font=("Segoe UI", 9, "bold"))
+        self.status_label = tk.Label(
+            status_box,
+            text="Model loading...",
+            bg=THEME["panel"],
+            fg=THEME["warn"],
+            font=("Segoe UI", 9, "bold"),
+        )
         self.status_label.pack(side="left", pady=12)
 
         mic_wrap = tk.Frame(self.root, bg=THEME["bg"])
         mic_wrap.pack(pady=(10, 8))
 
-        self.mic_btn = tk.Canvas(mic_wrap, width=108, height=108, bg=THEME["bg"], highlightthickness=0, cursor="hand2")
+        self.mic_btn = tk.Canvas(
+            mic_wrap,
+            width=108,
+            height=108,
+            bg=THEME["bg"],
+            highlightthickness=0,
+            cursor="hand2",
+        )
         self.mic_btn.pack()
         self._draw_mic_button(THEME["accent"], text="WAIT")
         self.mic_btn.bind("<Button-1>", lambda e: self.toggle_listening())
 
         hotkey = self.config["hotkey"].replace("+", " + ").upper()
-        tk.Label(self.root, text=f"Shortcut: {hotkey}", bg=THEME["bg"], fg=THEME["muted"], font=("Segoe UI", 8)).pack()
+        tk.Label(
+            self.root,
+            text=f"Shortcut: {hotkey}",
+            bg=THEME["bg"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 8),
+        ).pack()
 
-        controls = tk.Frame(self.root, bg=THEME["panel"], highlightbackground=THEME["border"], highlightthickness=1)
+        controls = tk.Frame(
+            self.root,
+            bg=THEME["panel"],
+            highlightbackground=THEME["border"],
+            highlightthickness=1,
+        )
         controls.pack(fill="x", padx=16, pady=(10, 10))
 
-        self._combo_row(controls, 0, "Model", "model_var", ["tiny", "base", "small", "medium", "large-v3"], self.config["stt"].get("model_cpu", "small"), self.on_model_change)
-        self._combo_row(controls, 1, "Profile", "profile_var", ["fast", "balanced", "quality"], self.config["stt"].get("quality_profile", "balanced"), self.on_profile_change)
-        self._combo_row(controls, 2, "Language Mode", "lang_mode_var", ["tr_en_mixed", "multilingual_auto"], self.config["stt"].get("language_mode", "tr_en_mixed"), self.on_language_mode_change)
+        self._combo_row(
+            controls,
+            0,
+            "Model",
+            "model_var",
+            ["tiny", "base", "small", "medium", "large-v3"],
+            self.config["stt"].get("model_cpu", "small"),
+            self.on_model_change,
+        )
+        self._combo_row(
+            controls,
+            1,
+            "Profile",
+            "profile_var",
+            ["fast", "balanced", "quality"],
+            self.config["stt"].get("quality_profile", "balanced"),
+            self.on_profile_change,
+        )
+        self._combo_row(
+            controls,
+            2,
+            "Language Mode",
+            "lang_mode_var",
+            ["tr_en_mixed", "multilingual_auto"],
+            self.config["stt"].get("language_mode", "tr_en_mixed"),
+            self.on_language_mode_change,
+        )
 
         self.auto_enter_var = tk.BooleanVar(value=self.config["auto_enter"])
-        ae = tk.Checkbutton(controls, text="Auto Enter after paste", variable=self.auto_enter_var, bg=THEME["panel"], fg=THEME["text"], selectcolor=THEME["panel"], activebackground=THEME["panel"], activeforeground=THEME["text"], command=self.on_auto_enter_change, font=("Segoe UI", 9))
+        ae = tk.Checkbutton(
+            controls,
+            text="Auto Enter after paste",
+            variable=self.auto_enter_var,
+            bg=THEME["panel"],
+            fg=THEME["text"],
+            selectcolor=THEME["panel"],
+            activebackground=THEME["panel"],
+            activeforeground=THEME["text"],
+            command=self.on_auto_enter_change,
+            font=("Segoe UI", 9),
+        )
         ae.grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(2, 10))
 
-        out = tk.Frame(self.root, bg=THEME["panel"], highlightbackground=THEME["border"], highlightthickness=1)
+        out = tk.Frame(
+            self.root,
+            bg=THEME["panel"],
+            highlightbackground=THEME["border"],
+            highlightthickness=1,
+        )
         out.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
-        tk.Label(out, text="Last transcript", bg=THEME["panel"], fg=THEME["muted"], font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=14, pady=(10, 4))
-        self.result_label = tk.Label(out, text="-", bg=THEME["panel"], fg=THEME["text"], font=("Segoe UI", 10), justify="left", anchor="w", wraplength=340)
+        tk.Label(
+            out,
+            text="Last transcript",
+            bg=THEME["panel"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 8, "bold"),
+        ).pack(anchor="w", padx=14, pady=(10, 4))
+        self.result_label = tk.Label(
+            out,
+            text="-",
+            bg=THEME["panel"],
+            fg=THEME["text"],
+            font=("Segoe UI", 10),
+            justify="left",
+            anchor="w",
+            wraplength=340,
+        )
         self.result_label.pack(fill="x", padx=14, pady=(0, 10))
 
-        tk.Label(out, text="Session metrics", bg=THEME["panel"], fg=THEME["muted"], font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=14, pady=(2, 2))
-        self.metrics_label = tk.Label(out, text="-", bg=THEME["panel"], fg=THEME["muted"], font=("Consolas", 8), justify="left", anchor="w")
+        tk.Label(
+            out,
+            text="Session metrics",
+            bg=THEME["panel"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 8, "bold"),
+        ).pack(anchor="w", padx=14, pady=(2, 2))
+        self.metrics_label = tk.Label(
+            out,
+            text="-",
+            bg=THEME["panel"],
+            fg=THEME["muted"],
+            font=("Consolas", 8),
+            justify="left",
+            anchor="w",
+        )
         self.metrics_label.pack(fill="x", padx=14, pady=(0, 12))
 
         exit_key = self.config["exit_hotkey"].replace("+", " + ").upper()
-        tk.Label(self.root, text=f"Exit: {exit_key}", bg=THEME["bg"], fg=THEME["muted"], font=("Segoe UI", 8)).pack(pady=(0, 8))
+        tk.Label(
+            self.root,
+            text=f"Exit: {exit_key}",
+            bg=THEME["bg"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 8),
+        ).pack(pady=(0, 8))
 
     def _combo_row(self, parent, row, label, var_name, values, default_value, callback):
-        tk.Label(parent, text=label, bg=THEME["panel"], fg=THEME["muted"], font=("Segoe UI", 8, "bold")).grid(row=row, column=0, sticky="w", padx=(14, 8), pady=7)
+        tk.Label(
+            parent,
+            text=label,
+            bg=THEME["panel"],
+            fg=THEME["muted"],
+            font=("Segoe UI", 8, "bold"),
+        ).grid(row=row, column=0, sticky="w", padx=(14, 8), pady=7)
         var = tk.StringVar(value=default_value)
-        combo = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=18, style="Studio.TCombobox")
+        combo = ttk.Combobox(
+            parent,
+            textvariable=var,
+            values=values,
+            state="readonly",
+            width=18,
+            style="Studio.TCombobox",
+        )
         combo.grid(row=row, column=1, sticky="w", padx=(0, 14), pady=7)
         combo.bind("<<ComboboxSelected>>", callback)
         setattr(self, var_name, var)
@@ -150,21 +305,39 @@ class VoicePasteApp:
 
     def _init_stt_worker(self):
         try:
-            self.stt = STTService(self.config, sample_rate=SAMPLE_RATE, channels=CHANNELS)
+            self.stt = STTService(
+                self.config, sample_rate=SAMPLE_RATE, channels=CHANNELS
+            )
             self.model_ready = True
             self.root.after(0, lambda: self._set_status("Ready", THEME["ok"]))
-            self.root.after(0, lambda: self._draw_mic_button(THEME["accent"], text="MIC"))
+            self.root.after(
+                0, lambda: self._draw_mic_button(THEME["accent"], text="MIC")
+            )
         except Exception as exc:
+            error_message = str(exc)
             self.model_ready = False
             self.root.after(0, lambda: self._set_status("Model error", THEME["danger"]))
-            self.root.after(0, lambda: self.result_label.config(text=f"Model load failed: {exc}"))
-            self.root.after(0, lambda: self._draw_mic_button(THEME["danger"], text="ERR"))
+            self.root.after(
+                0,
+                lambda: self.result_label.config(
+                    text=f"Model load failed: {error_message}"
+                ),
+            )
+            self.root.after(
+                0, lambda: self._draw_mic_button(THEME["danger"], text="ERR")
+            )
         finally:
             self.model_loading = False
 
     def _record_audio(self) -> bytes:
         cfg = self.config
-        stream = self.pa.open(format=FORMAT, channels=CHANNELS, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK)
+        stream = self.pa.open(
+            format=FORMAT,
+            channels=CHANNELS,
+            rate=SAMPLE_RATE,
+            input=True,
+            frames_per_buffer=CHUNK,
+        )
 
         frames = []
         silence_counter = 0
@@ -172,10 +345,16 @@ class VoicePasteApp:
         max_chunks = int((cfg["max_record_seconds"] * SAMPLE_RATE) / CHUNK)
         fallback_threshold = int(cfg["silence_threshold"])
         min_threshold = int(cfg["audio"].get("min_silence_threshold", 200))
-        adaptive_multiplier = float(cfg["audio"].get("silence_adaptive_multiplier", 2.5))
+        adaptive_multiplier = float(
+            cfg["audio"].get("silence_adaptive_multiplier", 2.5)
+        )
         calibration_chunks = max(
             1,
-            int(float(cfg["audio"].get("silence_calibration_seconds", 0.25)) * SAMPLE_RATE / CHUNK),
+            int(
+                float(cfg["audio"].get("silence_calibration_seconds", 0.25))
+                * SAMPLE_RATE
+                / CHUNK
+            ),
         )
         calibration_values = []
         calibrated_threshold = fallback_threshold
@@ -195,7 +374,9 @@ class VoicePasteApp:
                         calibration_values.append(rms)
                     if calibration_values:
                         ambient = float(np.percentile(calibration_values, 90))
-                        calibrated_threshold = int(max(min_threshold, ambient * adaptive_multiplier))
+                        calibrated_threshold = int(
+                            max(min_threshold, ambient * adaptive_multiplier)
+                        )
 
                 if rms > calibrated_threshold:
                     silence_counter = 0
@@ -243,11 +424,15 @@ class VoicePasteApp:
             duration = len(audio_bytes) / float(SAMPLE_RATE * CHANNELS * 2)
             if duration < max(0.12, float(cfg["min_record_seconds"])):
                 self.root.after(0, lambda: self._set_status("Too short", THEME["warn"]))
-                self.root.after(0, lambda: self.result_label.config(text="Recording too short"))
+                self.root.after(
+                    0, lambda: self.result_label.config(text="Recording too short")
+                )
                 winsound.Beep(420, 180)
                 return
 
-            self.root.after(0, lambda: self._set_status("Transcribing...", THEME["warn"]))
+            self.root.after(
+                0, lambda: self._set_status("Transcribing...", THEME["warn"])
+            )
 
             processed = preprocess_audio_bytes(
                 audio_bytes=audio_bytes,
@@ -261,24 +446,44 @@ class VoicePasteApp:
 
             if not result.text:
                 self.root.after(0, lambda: self._set_status("No speech", THEME["warn"]))
-                self.root.after(0, lambda: self.result_label.config(text="No speech detected"))
+                self.root.after(
+                    0, lambda: self.result_label.config(text="No speech detected")
+                )
                 winsound.Beep(420, 230)
                 return
 
             low_conf_allowed = bool(cfg["stt"].get("allow_low_confidence_paste", True))
             low_conf_floor = float(cfg["stt"].get("paste_min_confidence_floor", 0.25))
-            if not result.accepted and (not low_conf_allowed or result.confidence < low_conf_floor):
-                self.root.after(0, lambda: self._set_status("Low confidence", THEME["warn"]))
-                self.root.after(0, lambda: self.result_label.config(text=result.warning))
-                self.root.after(0, lambda: self.metrics_label.config(text=f"conf={result.confidence:.2f} logprob={result.avg_logprob:.2f}"))
+            if not result.accepted and (
+                not low_conf_allowed or result.confidence < low_conf_floor
+            ):
+                self.root.after(
+                    0, lambda: self._set_status("Low confidence", THEME["warn"])
+                )
+                self.root.after(
+                    0, lambda: self.result_label.config(text=result.warning)
+                )
+                self.root.after(
+                    0,
+                    lambda: self.metrics_label.config(
+                        text=(
+                            f"conf={result.confidence:.2f}"
+                            f" logprob={result.avg_logprob:.2f}"
+                        )
+                    ),
+                )
                 winsound.Beep(420, 230)
                 return
 
             text = self._post_process_text(result.text)
             ok, paste_message = self._paste_text(text, cfg)
             if not ok:
-                self.root.after(0, lambda: self._set_status("Paste warning", THEME["warn"]))
-                self.root.after(0, lambda: self.metrics_label.config(text=paste_message))
+                self.root.after(
+                    0, lambda: self._set_status("Paste warning", THEME["warn"])
+                )
+                self.root.after(
+                    0, lambda: self.metrics_label.config(text=paste_message)
+                )
 
             winsound.Beep(1200, 100)
             display = text if len(text) <= 130 else text[:127] + "..."
@@ -287,17 +492,36 @@ class VoicePasteApp:
                 if result.accepted:
                     self.root.after(0, lambda: self._set_status("Ready", THEME["ok"]))
                 else:
-                    self.root.after(0, lambda: self._set_status("Pasted (low conf)", THEME["warn"]))
-                self.root.after(0, lambda: self.metrics_label.config(text=f"{result.device}/{result.model}  latency={result.latency_sec:.2f}s  conf={result.confidence:.2f}"))
+                    self.root.after(
+                        0, lambda: self._set_status("Pasted (low conf)", THEME["warn"])
+                    )
+                self.root.after(
+                    0,
+                    lambda: self.metrics_label.config(
+                        text=(
+                            f"{result.device}/{result.model}"
+                            f"  latency={result.latency_sec:.2f}s"
+                            f"  conf={result.confidence:.2f}"
+                        )
+                    ),
+                )
 
         except Exception as exc:
+            error_message = str(exc)
             self._log_runtime_error(exc)
             self.root.after(0, lambda: self._set_status("Error", THEME["danger"]))
-            self.root.after(0, lambda: self.result_label.config(text=f"Error: {exc}"))
+            self.root.after(
+                0, lambda: self.result_label.config(text=f"Error: {error_message}")
+            )
             winsound.Beep(420, 260)
         finally:
             self.is_listening = False
-            self.root.after(0, lambda: self._draw_mic_button(THEME["accent"], text="MIC" if self.model_ready else "WAIT"))
+            self.root.after(
+                0,
+                lambda: self._draw_mic_button(
+                    THEME["accent"], text="MIC" if self.model_ready else "WAIT"
+                ),
+            )
 
     def _paste_text(self, text: str, cfg: dict) -> tuple[bool, str]:
         try:
@@ -401,8 +625,12 @@ class VoicePasteApp:
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
     def _setup_hotkey(self):
-        keyboard.add_hotkey(self.config["hotkey"], lambda: self.root.after(0, self.toggle_listening))
-        keyboard.add_hotkey(self.config["exit_hotkey"], lambda: self.root.after(0, self.on_close))
+        keyboard.add_hotkey(
+            self.config["hotkey"], lambda: self.root.after(0, self.toggle_listening)
+        )
+        keyboard.add_hotkey(
+            self.config["exit_hotkey"], lambda: self.root.after(0, self.on_close)
+        )
 
     def minimize_to_tray(self):
         self.root.withdraw()

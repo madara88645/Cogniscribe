@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203, W503, E231, E702
+exclude =
+    .git,
+    __pycache__,
+    dist,
+    build,
+    desktop/node_modules,
+    desktop/renderer/dist,
+    desktop/dist-electron
