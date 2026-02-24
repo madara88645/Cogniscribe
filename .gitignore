@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+logs/*.log
+desktop/node_modules/
+desktop/dist-electron/
+desktop/renderer/dist/
+desktop/release/
+
+# Environment files
+.env
+.env.*

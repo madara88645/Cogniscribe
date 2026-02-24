@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  python-backend:
+    name: Python backend checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Black (format check)
+        run: black --check .
+
+      - name: Flake8
+        run: flake8 .
+
+      - name: Mypy
+        run: mypy --ignore-missing-imports .
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Dependency audit (pip-audit)
+        run: pip-audit --progress-spinner=off
+
+  node-frontend:
+    name: Electron frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build renderer
+        working-directory: desktop
+        run: npm run build:renderer
+
+      - name: Build electron (TS compile)
+        working-directory: desktop
+        run: npm run build:electron
+
+      - name: NPM audit
+        working-directory: desktop
+        run: npm audit --audit-level=high
