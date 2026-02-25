@@ -9,6 +9,13 @@ on:
 jobs:
   python-backend:
     name: Python backend checks (Python ${{ matrix.python-version }})
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,6 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -87,3 +95,14 @@ jobs:
       - name: NPM audit
         working-directory: desktop
         run: npm audit --omit=dev --audit-level=high
+      - name: Install test dependencies
+        # We only install the lightweight deps needed to run the test suite.
+        # Heavy / platform-specific packages (PyAudio, faster-whisper, keyboard,
+        # pyautogui, pystray, winsound) are mocked by the test modules and must
+        # NOT be installed here — they require hardware or a Windows environment.
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy
+
+      - name: Run tests
+        run: pytest tests/ -v
