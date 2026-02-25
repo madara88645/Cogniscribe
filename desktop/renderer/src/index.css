@@ -3,16 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --vp-bg: #f4efe7;
-  --vp-surface: #ffffff;
-  --vp-surface-soft: #f8f2ea;
-  --vp-border: #dfd2bf;
-  --vp-text: #2f2a24;
-  --vp-muted: #6a6258;
-  --vp-accent: #9a6b2f;
-  --vp-danger: #b04a3f;
-  --vp-ok: #2f7a4b;
-  --vp-warn: #b67d2d;
+  --vp-bg: #05070d;
+  --vp-surface: #0f1424;
+  --vp-surface-soft: #101a30;
+  --vp-border: #223459;
+  --vp-text: #eef5ff;
+  --vp-muted: #93a7cd;
+  --vp-accent: #2aa8ff;
+  --vp-accent-2: #8be0ff;
+  --vp-danger: #ff5376;
+  --vp-ok: #37d8aa;
+  --vp-warn: #ffc35c;
+  --vp-glass: rgba(20, 32, 56, 0.62);
 }
 
 html,
@@ -26,12 +28,28 @@ body {
   font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
   color: var(--vp-text);
   background:
-    radial-gradient(circle at top right, #f7e8d6 0%, rgba(247, 232, 214, 0) 38%),
-    linear-gradient(180deg, #f8f3eb 0%, #f2ebdf 100%);
+    radial-gradient(circle at 0% 0%, rgba(46, 112, 255, 0.32) 0%, rgba(46, 112, 255, 0) 42%),
+    radial-gradient(circle at 100% 0%, rgba(90, 230, 255, 0.24) 0%, rgba(90, 230, 255, 0) 38%),
+    radial-gradient(circle at 50% 110%, rgba(24, 62, 145, 0.28) 0%, rgba(24, 62, 145, 0) 55%),
+    linear-gradient(160deg, #03050a 0%, #070d1a 55%, #081128 100%);
+  letter-spacing: 0.01em;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.vp-glass {
+  background: linear-gradient(145deg, rgba(20, 32, 56, 0.72), rgba(12, 20, 38, 0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.vp-glow {
+  box-shadow:
+    0 0 0 1px rgba(71, 129, 245, 0.2),
+    0 12px 28px rgba(0, 0, 0, 0.42),
+    0 0 35px rgba(42, 168, 255, 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {

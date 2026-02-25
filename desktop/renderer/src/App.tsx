@@ -122,15 +122,15 @@ export default function App() {
 
   return (
     <main className="mx-auto flex h-full w-full max-w-[420px] flex-col gap-3 p-4">
-      <header className="rounded-2xl border border-[var(--vp-border)] bg-[var(--vp-surface)]/95 px-4 py-4 shadow-soft">
+      <header className="vp-glass vp-glow rounded-2xl border border-[var(--vp-border)] px-4 py-4">
         <div className="mb-2 flex items-center justify-between">
           <h1 className="font-display text-2xl tracking-tight text-[var(--vp-text)]">Voice Paste Studio</h1>
           <StatusBadge status={status} />
         </div>
-        <p className="text-xs text-[var(--vp-muted)]">Refined local dictation workspace with compact desktop flow.</p>
+        <p className="text-xs text-[var(--vp-muted)]">Luxury dark dictation workspace with compact desktop flow.</p>
       </header>
 
-      <section className="rounded-2xl border border-[var(--vp-border)] bg-[var(--vp-surface)]/95 px-4 py-4 text-center shadow-soft">
+      <section className="vp-glass vp-glow rounded-2xl border border-[var(--vp-border)] px-4 py-4 text-center">
         <RecordButton isListening={isListening} isTranscribing={isTranscribing} disabled={status === "loading"} onClick={() => void toggleListening()} />
         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--vp-muted)]">{hotkeysText.record} to record</p>
       </section>
@@ -149,12 +149,12 @@ export default function App() {
 
       <MetricsStrip latencySec={metrics.latency_sec} device={metrics.device} model={metrics.model} confidence={metrics.confidence} />
 
-      <footer className="mt-auto rounded-2xl border border-[var(--vp-border)] bg-[var(--vp-surface)]/90 px-4 py-3 text-[11px] text-[var(--vp-muted)] shadow-soft">
+      <footer className="vp-glass vp-glow mt-auto rounded-2xl border border-[var(--vp-border)] px-4 py-3 text-[11px] text-[var(--vp-muted)]">
         <p className="font-semibold uppercase tracking-[0.12em]">Hotkeys</p>
         <p>Record: {hotkeysText.record}</p>
         <p>Exit: {hotkeysText.exit}</p>
         <p className="mt-1">Tray Mode: Active</p>
-        {error ? <p className="mt-2 rounded-lg bg-red-100 px-2 py-1 text-red-700">{error}</p> : null}
+        {error ? <p className="mt-2 rounded-lg border border-rose-400/40 bg-rose-500/15 px-2 py-1 text-rose-200">{error}</p> : null}
       </footer>
     </main>
   );

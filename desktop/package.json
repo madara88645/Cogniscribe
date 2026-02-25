@@ -4,9 +4,10 @@
   "private": true,
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev": "node scripts/run-dev.cjs",
+    "dev:prepare": "node scripts/free-dev-port.cjs 5173",
     "dev:renderer": "vite --config renderer/vite.config.ts",
-    "dev:electron": "wait-on tcp:5173 && npm run build:electron && cross-env ELECTRON_RUN_AS_NODE=0 ELECTRON_START_URL=http://localhost:5173 electron .",
+    "dev:electron": "wait-on tcp:5173 && npm run build:electron && node scripts/run-electron-dev.cjs",
     "build:electron": "tsc -p electron/tsconfig.json",
     "build:renderer": "vite build --config renderer/vite.config.ts",
     "build": "npm run build:electron && npm run build:renderer",

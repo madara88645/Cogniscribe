@@ -1,4 +1,4 @@
-type Props = {
+﻿type Props = {
   model: string;
   profile: string;
   languageMode: string;
@@ -9,7 +9,7 @@ type Props = {
 };
 
 const selectClass =
-  "w-full rounded-xl border border-[var(--vp-border)] bg-white px-3 py-2 text-sm font-medium text-[var(--vp-text)] shadow-soft outline-none transition focus:border-[var(--vp-accent)]";
+  "w-full rounded-xl border border-[var(--vp-border)] bg-[#0b1327] px-3 py-2 text-sm font-medium text-[var(--vp-text)] shadow-soft outline-none transition focus:border-[var(--vp-accent)] focus:shadow-[0_0_0_3px_rgba(42,168,255,0.16)]";
 
 export function QuickSettings({
   model,
@@ -21,7 +21,7 @@ export function QuickSettings({
   disabled,
 }: Props) {
   return (
-    <section className="rounded-2xl border border-[var(--vp-border)] bg-[var(--vp-surface)]/95 p-4 shadow-soft">
+    <section className="vp-glass vp-glow rounded-2xl border border-[var(--vp-border)] p-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--vp-muted)]">Quick Settings</p>
       <div className="grid grid-cols-3 gap-2">
         <label className="space-y-1">

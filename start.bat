@@ -6,8 +6,13 @@ echo.
 
 cd /d "%~dp0"
 
+set "PYTHON_EXE=python"
+if exist "%~dp0.venv\Scripts\python.exe" (
+    set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
+)
+
 :: Python kontrolu (backend icin)
-python --version >nul 2>&1
+"%PYTHON_EXE%" --version >nul 2>&1
 if errorlevel 1 (
     echo [HATA] Python bulunamadi! Lutfen Python yukleyin.
     pause
@@ -15,10 +20,15 @@ if errorlevel 1 (
 )
 
 :: Backend bagimliliklari kontrol et ve kur
-pip show faster-whisper >nul 2>&1
+"%PYTHON_EXE%" -m pip show faster-whisper >nul 2>&1
 if errorlevel 1 (
     echo [*] Python bagimliliklari kuruluyor...
-    pip install -r requirements.txt
+    "%PYTHON_EXE%" -m pip install -r requirements.txt
+    if errorlevel 1 (
+        echo [HATA] Python bagimlilik kurulumu basarisiz.
+        pause
+        exit /b 1
+    )
     echo.
 )
 
@@ -38,7 +48,7 @@ if errorlevel 1 (
 )
 
 cd /d "%~dp0desktop"
-set ELECTRON_RUN_AS_NODE=0
+set ELECTRON_RUN_AS_NODE=
 
 :: Frontend bagimliliklari
 if not exist node_modules (

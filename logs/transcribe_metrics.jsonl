@@ -12,3 +12,11 @@
 {"ts": 1771936963, "duration_audio_sec": 4.352, "latency_sec": 0.872, "device": "cpu", "model": "base", "avg_logprob": -1.0261, "no_speech_prob": 0.0362, "confidence": 0.6006, "accepted": true}
 {"ts": 1771937166, "duration_audio_sec": 4.928, "latency_sec": 0.888, "device": "cpu", "model": "base", "avg_logprob": -0.6212, "no_speech_prob": 0.0146, "confidence": 0.7165, "accepted": true}
 {"ts": 1771937312, "duration_audio_sec": 4.608, "latency_sec": 2.327, "device": "cpu", "model": "small", "avg_logprob": -0.326, "no_speech_prob": 0.0051, "confidence": 0.831, "accepted": true}
+{"ts": 1771950921, "duration_audio_sec": 3.52, "latency_sec": 2.321, "device": "cpu", "model": "small", "avg_logprob": -0.4752, "no_speech_prob": 0.0274, "confidence": 0.7621, "accepted": true}
+{"ts": 1771950944, "duration_audio_sec": 13.248, "latency_sec": 2.724, "device": "cpu", "model": "small", "avg_logprob": -0.2615, "no_speech_prob": 0.1251, "confidence": 0.8119, "accepted": true}
+{"ts": 1771952772, "duration_audio_sec": 3.584, "latency_sec": 2.143, "device": "cpu", "model": "small", "avg_logprob": -0.3915, "no_speech_prob": 0.0504, "confidence": 0.7854, "accepted": true}
+{"ts": 1772010043, "duration_audio_sec": 17.728, "latency_sec": 3.078, "device": "cpu", "model": "small", "avg_logprob": -0.3475, "no_speech_prob": 0.0105, "confidence": 0.8197, "accepted": true}
+{"ts": 1772010086, "duration_audio_sec": 11.648, "latency_sec": 2.462, "device": "cpu", "model": "small", "avg_logprob": -0.2468, "no_speech_prob": 0.0105, "confidence": 0.8646, "accepted": true}
+{"ts": 1772011398, "duration_audio_sec": 18.816, "latency_sec": 8.231, "device": "cpu", "model": "small", "avg_logprob": -0.3884, "no_speech_prob": 0.0538, "confidence": 0.7854, "accepted": true}
+{"ts": 1772011432, "duration_audio_sec": 8.96, "latency_sec": 4.591, "device": "cpu", "model": "small", "avg_logprob": -0.3163, "no_speech_prob": 0.1829, "confidence": 0.7641, "accepted": true}
+{"ts": 1772011640, "duration_audio_sec": 5.952, "latency_sec": 4.44, "device": "cpu", "model": "small", "avg_logprob": -0.3916, "no_speech_prob": 0.0417, "confidence": 0.7889, "accepted": true}

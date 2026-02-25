@@ -59,7 +59,7 @@ class BackendBridge extends EventEmitter {
     }
   }
 
-  async request(method: string, params: JsonObject = {}): Promise<any> {
+  async request(method: string, params: JsonObject = {}, timeoutMs = 15000): Promise<any> {
     if (!this.proc || !this.proc.stdin.writable) {
       throw new Error("Backend is not running");
     }
@@ -70,7 +70,7 @@ class BackendBridge extends EventEmitter {
       const timeout = setTimeout(() => {
         this.pending.delete(id);
         reject(new Error(`Backend request timeout: ${method}`));
-      }, 15000);
+      }, timeoutMs);
 
       this.pending.set(id, { resolve, reject, timeout });
       this.proc?.stdin.write(`${JSON.stringify(payload)}\n`);
@@ -115,7 +115,8 @@ class BackendBridge extends EventEmitter {
       }
     });
 
-    await this.request("ping");
+    const pingTimeout = Number(process.env.VP_BACKEND_PING_TIMEOUT_MS || 60000);
+    await this.request("ping", {}, Number.isFinite(pingTimeout) ? pingTimeout : 60000);
   }
 
   private handleStdoutLine(line: string): void {
@@ -151,6 +152,12 @@ let backend: BackendBridge;
 let configCache: AppConfig | null = null;
 let currentStatus = "loading";
 let isQuitting = false;
+
+if (typeof app?.on !== "function") {
+  // Happens when Electron runs in node mode (RUN_AS_NODE leakage).
+  console.error("Electron node mode detected. Check ELECTRON_RUN_AS_NODE.");
+  process.exit(1);
+}
 
 function getRoots() {
   const devProjectRoot = path.resolve(__dirname, "..", "..");

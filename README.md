@@ -73,3 +73,19 @@ Output path:
 - STT is local/offline by default.
 - GPU fallback to CPU is automatic when CUDA load fails.
 - Low-confidence handling is configurable (`allow_low_confidence_paste`, floors, retry).
+
+## Troubleshooting
+
+- `TypeError: Cannot read properties of undefined (reading 'on')` in `dev:electron`:
+  - Cause: global `ELECTRON_RUN_AS_NODE` is set.
+  - Quick fix (current terminal): `set ELECTRON_RUN_AS_NODE=`
+  - Permanent fix: remove global `ELECTRON_RUN_AS_NODE` from system/user environment variables.
+
+- `Backend request timeout: ping` on startup:
+  - Increase backend init timeout:
+    - `set VP_BACKEND_PING_TIMEOUT_MS=90000`
+    - then run `npm run dev` again.
+
+- `Error: Port 5173 is already in use`:
+  - `npm run dev` now auto-frees port `5173` on Windows before starting Vite.
+  - If it still fails, close old dev terminals and run `npm run dev` again.
