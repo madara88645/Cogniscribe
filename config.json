@@ -1,16 +1,71 @@
 {
-    "language": "en",
+    "language": "tr",
     "hotkey": "ctrl+shift+space",
     "auto_enter": false,
     "paste_delay": 0.5,
     "beep_on_ready": true,
     "exit_hotkey": "ctrl+shift+q",
-    
-    "whisper_model": "base",
     "silence_threshold": 500,
     "silence_duration": 1.2,
     "max_record_seconds": 60,
-    "min_record_seconds": 0.3,
-    "enable_multilingual": true,
-    "post_recording_delay": 0.5
+    "min_record_seconds": 0.12,
+    "post_recording_delay": 0.5,
+    "stt": {
+        "backend": "faster_whisper_local",
+        "model_cpu": "small",
+        "model_gpu": "large-v3",
+        "device": "cpu",
+        "compute_type_cpu": "int8",
+        "compute_type_gpu": "float16",
+        "language_mode": "tr_en_mixed",
+        "primary_language": "tr",
+        "quality_profile": "balanced",
+        "beam_size": 3,
+        "best_of": 3,
+        "vad_filter": true,
+        "min_confidence_for_accept": 0.35,
+        "allow_low_confidence_paste": true,
+        "paste_min_confidence_floor": 0.25,
+        "retry_on_low_confidence": true,
+        "use_legacy_decode_values": false,
+        "term_hints": [
+            "proje",
+            "projenin",
+            "plani",
+            "planini",
+            "implementasyon",
+            "entegrasyon",
+            "api",
+            "endpoint",
+            "deployment",
+            "microservice",
+            "yapmamiz",
+            "gerekiyor"
+        ]
+    },
+    "audio": {
+        "noise_suppression": false,
+        "highpass_hz": 80,
+        "normalize_target_dbfs": -20.0,
+        "silence_calibration_seconds": 0.25,
+        "silence_adaptive_multiplier": 2.5,
+        "min_silence_threshold": 200
+    },
+    "telemetry": {
+        "enabled": true,
+        "log_path": "logs/transcribe_metrics.jsonl"
+    },
+    "ui": {
+        "window": {
+            "width": 420,
+            "height": 620,
+            "always_on_top": true
+        },
+        "theme": {
+            "mode": "light",
+            "accent": "#9a6b2f"
+        },
+        "density": "compact",
+        "motion": "subtle"
+    }
 }

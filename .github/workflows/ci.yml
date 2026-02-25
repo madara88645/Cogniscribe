@@ -2,6 +2,13 @@ name: CI
 
 on:
   push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  python-backend:
+    name: Python backend checks (Python ${{ matrix.python-version }})
     branches: [main]
   pull_request:
     branches: [main]
@@ -18,6 +25,7 @@ jobs:
         python-version: ["3.11", "3.12"]
 
     steps:
+      - name: Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -26,6 +34,67 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install system dependencies
+        run: sudo apt-get update -q && sudo apt-get install -y portaudio19-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Black (format check)
+        run: black --check .
+
+      - name: Flake8
+        run: flake8 .
+
+      - name: Mypy
+        run: mypy --ignore-missing-imports .
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Dependency audit (pip-audit)
+        run: pip-audit --progress-spinner=off
+
+  node-frontend:
+    name: Electron frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build renderer
+        working-directory: desktop
+        run: npm run build:renderer
+
+      - name: Build electron (TS compile)
+        working-directory: desktop
+        run: npm run build:electron
+
+      - name: NPM audit
+        working-directory: desktop
+        run: npm audit --omit=dev --audit-level=high
       - name: Install test dependencies
         # We only install the lightweight deps needed to run the test suite.
         # Heavy / platform-specific packages (PyAudio, faster-whisper, keyboard,

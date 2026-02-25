@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+logs/*.log
 
 # Virtual environments
 .venv/
@@ -26,3 +27,13 @@ htmlcov/
 .idea/
 .vscode/
 *.swp
+
+# Desktop
+desktop/node_modules/
+desktop/dist-electron/
+desktop/renderer/dist/
+desktop/release/
+
+# Environment files
+.env
+.env.*
