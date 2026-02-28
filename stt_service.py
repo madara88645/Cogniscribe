@@ -259,20 +259,26 @@ def _confidence_score(avg_logprob: float, no_speech_prob: float) -> float:
     return max(0.0, min(1.0, score))
 
 
+_TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+")
+_SPLIT_HINT_PATTERN = re.compile(r"\b[iı]p\s+le\s+mantasyon\b")
+
+
 def _looks_fragmented(text: str) -> bool:
     if not text:
         return True
-    tokens = re.findall(r"[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+", text.lower())
+    lower_text = text.lower()
+    tokens = _TOKEN_PATTERN.findall(lower_text)
     if len(tokens) < 4:
         return False
     short_tokens = sum(1 for token in tokens if len(token) <= 2)
     short_ratio = short_tokens / max(1, len(tokens))
-    split_hint = bool(re.search(r"\b[iı]p\s+le\s+mantasyon\b", text.lower()))
-    return short_ratio >= 0.35 or split_hint
+    if short_ratio >= 0.35:
+        return True
+    return bool(_SPLIT_HINT_PATTERN.search(lower_text))
 
 
 def _fragment_ratio(text: str) -> float:
-    tokens = re.findall(r"[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+", (text or "").lower())
+    tokens = _TOKEN_PATTERN.findall((text or "").lower())
     if not tokens:
         return 1.0
     short_tokens = sum(1 for token in tokens if len(token) <= 2)
