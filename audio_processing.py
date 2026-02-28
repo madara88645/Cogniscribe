@@ -53,25 +53,16 @@ def highpass_filter(
 
         return y.astype(np.float32)
     except ImportError:
-        # Use python list for slightly faster scalar iteration in pure python
-        # This avoids numpy overhead for scalar assignment in loop
-        x_list = x.tolist()
-        y_list = [0.0] * len(x_list)
+        pass
+
     # Use python list for slightly faster scalar iteration in pure python
     # This avoids numpy overhead for scalar assignment in loop
     x_list = x.tolist()
     y_arr = np.zeros(len(x_list), dtype=np.float32)
 
-        prev_y = 0.0
-        prev_x = x_list[0] if len(x_list) > 0 else 0.0
+    prev_y = 0.0
+    prev_x = x_list[0] if len(x_list) > 0 else 0.0
 
-        for i, cur_x in enumerate(x_list):
-            cur_y = alpha * (prev_y + cur_x - prev_x)
-            y_list[i] = cur_y
-            prev_y = cur_y
-            prev_x = cur_x
-
-        return np.array(y_list, dtype=np.float32)
     for i, cur_x in enumerate(x_list):
         cur_y = alpha * (prev_y + cur_x - prev_x)
         y_arr[i] = cur_y

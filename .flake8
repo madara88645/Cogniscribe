@@ -8,4 +8,7 @@ exclude =
     build,
     desktop/node_modules,
     desktop/renderer/dist,
-    desktop/dist-electron
+    desktop/dist-electron,
+    benchmark_regex.py,
+    benchmark_regex2.py,
+    benchmark_regex3.py

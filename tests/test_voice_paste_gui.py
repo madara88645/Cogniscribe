@@ -15,6 +15,7 @@ import pytest
 
 # ── Mock every platform/GUI dependency before importing the module ─────────────
 
+
 def _make_module(name, **attrs):
     mod = types.ModuleType(name)
     for k, v in attrs.items():
@@ -26,12 +27,17 @@ def _make_module(name, **attrs):
 # setdefault keeps the first registration.
 sys.modules.setdefault("winsound", _make_module("winsound", Beep=MagicMock()))
 sys.modules.setdefault("pyaudio", _make_module("pyaudio", PyAudio=MagicMock, paInt16=8))
-sys.modules.setdefault("pyautogui", _make_module("pyautogui", hotkey=MagicMock(), press=MagicMock()))
+sys.modules.setdefault(
+    "pyautogui", _make_module("pyautogui", hotkey=MagicMock(), press=MagicMock())
+)
 sys.modules.setdefault("pyperclip", _make_module("pyperclip", copy=MagicMock()))
-sys.modules.setdefault("keyboard", _make_module("keyboard", add_hotkey=MagicMock(), wait=MagicMock()))
+sys.modules.setdefault(
+    "keyboard", _make_module("keyboard", add_hotkey=MagicMock(), wait=MagicMock())
+)
 sys.modules.setdefault(
     "faster_whisper", _make_module("faster_whisper", WhisperModel=MagicMock())
 )
+sys.modules.setdefault("stt_service", _make_module("stt_service", STTService=MagicMock))
 
 # tkinter
 _tk_mock = _make_module(
@@ -81,6 +87,7 @@ import voice_paste_gui as vpg  # noqa: E402
 
 # ── load_config tests ──────────────────────────────────────────────────────────
 
+
 class TestGuiLoadConfig:
     def test_returns_defaults_when_no_file(self, tmp_path, monkeypatch):
         monkeypatch.setattr(vpg, "CONFIG_PATH", str(tmp_path / "missing.json"))
@@ -90,7 +97,9 @@ class TestGuiLoadConfig:
 
     def test_merges_user_values_over_defaults(self, tmp_path, monkeypatch):
         cfg_file = tmp_path / "config.json"
-        cfg_file.write_text(json.dumps({"language": "de", "auto_enter": True}), encoding="utf-8")
+        cfg_file.write_text(
+            json.dumps({"language": "de", "auto_enter": True}), encoding="utf-8"
+        )
         monkeypatch.setattr(vpg, "CONFIG_PATH", str(cfg_file))
         cfg = vpg.load_config()
         assert cfg["language"] == "de"
@@ -122,6 +131,7 @@ class TestGuiLoadConfig:
 
 # ── save_config tests ──────────────────────────────────────────────────────────
 
+
 class TestGuiSaveConfig:
     def test_writes_valid_json(self, tmp_path, monkeypatch):
         cfg_file = tmp_path / "config.json"
@@ -150,6 +160,7 @@ class TestGuiSaveConfig:
 
 # ── _post_process_text tests ───────────────────────────────────────────────────
 
+
 class TestPostProcessText:
     """
     Tests for VoicePasteApp._post_process_text() called as a plain function
@@ -169,7 +180,7 @@ class TestPostProcessText:
     def test_turkish_correction_applied(self, post_process):
         text = "bu high teknoloji"
         result = post_process(text, "tr")
-        assert "hai" in result
+        assert "hay" in result
 
     def test_other_language_no_correction(self, post_process):
         """Corrections must NOT be applied for non-Turkish text."""
@@ -184,8 +195,44 @@ class TestPostProcessText:
         result = post_process("test", "tr")
         assert isinstance(result, str)
 
+    def test_bugun_corrected(self, post_process):
+        """'bugun' should be corrected to 'bugün' in Turkish mode."""
+        result = post_process("bugun hava guzel", "tr")
+        assert "bugün" in result
+
+    def test_simdi_corrected(self, post_process):
+        """'simdi' should be corrected to 'şimdi' in Turkish mode."""
+        result = post_process("simdi gidelim", "tr")
+        assert "şimdi" in result
+
+    def test_multiple_spaces_collapsed(self, post_process):
+        """Multiple spaces should be collapsed to a single space."""
+        result = post_process("  multiple   spaces  ", "tr")
+        assert result == "multiple spaces"
+
+    def test_multiple_spaces_collapsed_non_turkish(self, post_process):
+        """Space collapsing must also work for non-Turkish text."""
+        result = post_process("  multiple   spaces  ", "en")
+        assert result == "multiple spaces"
+
+    def test_non_turkish_bugun_unchanged(self, post_process):
+        """Phonetic corrections must NOT fire for non-Turkish languages."""
+        result = post_process("bugun simdi dogru", "en")
+        assert result == "bugun simdi dogru"
+
+    def test_yarin_corrected(self, post_process):
+        """'yarin' should be corrected to 'yarın' in Turkish mode."""
+        result = post_process("yarin goruselim", "tr")
+        assert "yarın" in result
+
+    def test_dogru_corrected(self, post_process):
+        """'dogru' should be corrected to 'doğru' in Turkish mode."""
+        result = post_process("bu dogru degil", "tr")
+        assert "doğru" in result
+
 
 # ── LANG_MAP / DEFAULT_CONFIG sanity checks ────────────────────────────────────
+
 
 class TestGuiConstants:
     def test_lang_map_has_expected_codes(self):
@@ -194,8 +241,13 @@ class TestGuiConstants:
 
     def test_default_config_has_required_keys(self):
         required = {
-            "language", "hotkey", "auto_enter", "paste_delay",
-            "beep_on_ready", "exit_hotkey", "whisper_model",
+            "language",
+            "hotkey",
+            "auto_enter",
+            "paste_delay",
+            "beep_on_ready",
+            "exit_hotkey",
+            "whisper_model",
         }
         assert required.issubset(vpg.DEFAULT_CONFIG.keys())
 

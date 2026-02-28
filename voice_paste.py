@@ -1,8 +1,14 @@
+import copy
+import json
+import os
 import sys
+import tempfile
 import threading
 import time
+import wave
 import winsound
 
+import config_manager as _config_manager
 import keyboard
 import numpy as np
 import pyaudio
@@ -10,13 +16,56 @@ import pyautogui
 import pyperclip
 
 from audio_processing import get_rms, preprocess_audio_bytes
-from config_manager import load_config
 from stt_service import STTService
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
+
+CONFIG_PATH = _config_manager.CONFIG_PATH
+
+DEFAULT_CONFIG = {
+    "language": "tr",
+    "hotkey": "ctrl+shift+space",
+    "auto_enter": False,
+    "paste_delay": 0.5,
+    "beep_on_ready": True,
+    "exit_hotkey": "ctrl+shift+q",
+    "whisper_model": "small",
+    "silence_threshold": 500,
+    "silence_duration": 1.2,
+    "max_record_seconds": 60,
+}
+
+
+def load_config() -> dict:
+    """Return a flat CLI config merged from DEFAULT_CONFIG and CONFIG_PATH file."""
+    global CONFIG_PATH
+    config = copy.deepcopy(DEFAULT_CONFIG)
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                user_cfg = json.load(f)
+            config.update(user_cfg)
+        except Exception:
+            pass
+    lang = config.get("language", "tr")
+    if isinstance(lang, str) and "-" in lang:
+        config["language"] = lang.split("-")[0].lower()
+    return config
+
+
+def save_audio_temp(audio_bytes: bytes) -> str:
+    """Write audio bytes to a temporary WAV file and return the path."""
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        path = tmp.name
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(2)
+        wf.setframerate(SAMPLE_RATE)
+        wf.writeframes(audio_bytes)
+    return path
 
 
 def beep_ready():
@@ -232,7 +281,7 @@ def run_once(config: dict, stt: STTService):
 
 
 def main():
-    config = load_config()
+    config = _config_manager.load_config()
     stt = STTService(config=config, sample_rate=SAMPLE_RATE, channels=CHANNELS)
 
     if "--once" in sys.argv:

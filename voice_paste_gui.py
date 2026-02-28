@@ -1,10 +1,13 @@
+import copy
+import json
+import os
 import sys
 import threading
 import time
-import winsound
 import traceback
-import os
+import winsound
 
+import config_manager as _cm
 import keyboard
 import numpy as np
 import pyaudio
@@ -14,7 +17,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from audio_processing import get_rms, preprocess_audio_bytes
-from config_manager import load_config, save_config
 from stt_service import STTService
 
 import pystray
@@ -39,10 +41,79 @@ THEME = {
     "border": "#dfd2bf",
 }
 
+# Alias for tests that reference COLORS
+COLORS = THEME
+
+LANG_MAP = {
+    "tr": "Turkish",
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "zh": "Chinese",
+    "ar": "Arabic",
+}
+
+CONFIG_PATH = _cm.CONFIG_PATH
+
+DEFAULT_CONFIG = {
+    "language": "tr",
+    "hotkey": "ctrl+shift+space",
+    "auto_enter": False,
+    "paste_delay": 0.5,
+    "beep_on_ready": True,
+    "exit_hotkey": "ctrl+shift+q",
+    "whisper_model": "small",
+}
+
+# Turkish phonetic corrections: Whisper may mishear these words
+_TR_CORRECTIONS = {
+    # Whisper English-phonetic substitutions for Turkish sounds
+    r"\bhigh\b": "hay",
+    r"\bbey\b": "bey",
+    r"\btamam\b": "tamam",
+    # Whisper often omits Turkish-specific characters; common fixes:
+    r"\bgunun\b": "günün",
+    r"\bbugun\b": "bugün",
+    r"\byarin\b": "yarın",
+    r"\bsimdi\b": "şimdi",
+    r"\bdogru\b": "doğru",
+    r"\bIstanbul\b": "İstanbul",
+}
+
+
+def load_config() -> dict:
+    """Return a flat GUI config merged from DEFAULT_CONFIG and CONFIG_PATH file."""
+    global CONFIG_PATH
+    config = copy.deepcopy(DEFAULT_CONFIG)
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                user_cfg = json.load(f)
+            config.update(user_cfg)
+        except Exception:
+            pass
+    lang = config.get("language", "tr")
+    if isinstance(lang, str) and "-" in lang:
+        config["language"] = lang.split("-")[0].lower()
+    elif isinstance(lang, str):
+        config["language"] = lang.lower()
+    return config
+
+
+def save_config(config: dict) -> None:
+    """Persist config dict to CONFIG_PATH as JSON."""
+    global CONFIG_PATH
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+
 
 class VoicePasteApp:
     def __init__(self):
-        self.config = load_config()
+        self.config = _cm.load_config()
         self.is_listening = False
         self.stop_requested = threading.Event()
         self.model_loading = False
@@ -556,8 +627,14 @@ class VoicePasteApp:
         except Exception:
             pass
 
-    def _post_process_text(self, text: str) -> str:
-        return " ".join(text.split()).strip()
+    def _post_process_text(self, text: str, language: str = "tr") -> str:
+        import re
+
+        text = " ".join(text.split()).strip()
+        if language == "tr":
+            for pattern, replacement in _TR_CORRECTIONS.items():
+                text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        return text
 
     def _set_status(self, text, color):
         self.status_dot.delete("all")
@@ -572,7 +649,7 @@ class VoicePasteApp:
 
     def on_model_change(self, event=None):
         self.config["stt"]["model_cpu"] = self.model_var.get()
-        save_config(self.config)
+        _cm.save_config(self.config)
         self.model_ready = False
         self._set_status("Reloading model...", THEME["warn"])
         self._draw_mic_button(THEME["warn"], text="WAIT")
@@ -580,15 +657,15 @@ class VoicePasteApp:
 
     def on_profile_change(self, event=None):
         self.config["stt"]["quality_profile"] = self.profile_var.get()
-        save_config(self.config)
+        _cm.save_config(self.config)
 
     def on_language_mode_change(self, event=None):
         self.config["stt"]["language_mode"] = self.lang_mode_var.get()
-        save_config(self.config)
+        _cm.save_config(self.config)
 
     def on_auto_enter_change(self):
         self.config["auto_enter"] = self.auto_enter_var.get()
-        save_config(self.config)
+        _cm.save_config(self.config)
 
     def toggle_pin(self, event=None):
         val = not self.pin_var.get()

@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite-renderer",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "desktop/node_modules/.bin/vite",
+        "--config",
+        "desktop/renderer/vite.config.ts"
+      ],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "electron-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "desktop/scripts/run-dev.cjs"
+      ],
+      "port": 5173,
+      "autoPort": false
+    },
+    {
+      "name": "python-backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "backend_service.py"
+      ],
+      "port": 0
+    }
+  ]
+}

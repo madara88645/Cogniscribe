@@ -3,6 +3,7 @@ import re
 
 text = "a b c d e f g h i j" * 10
 
+
 def original_looks_fragmented(text: str) -> bool:
     if not text:
         return True
@@ -14,6 +15,7 @@ def original_looks_fragmented(text: str) -> bool:
     split_hint = bool(re.search(r"\b[iı]p\s+le\s+mantasyon\b", text.lower()))
     return short_ratio >= 0.35 or split_hint
 
+
 def original_fragment_ratio(text: str) -> float:
     tokens = re.findall(r"[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+", (text or "").lower())
     if not tokens:
@@ -21,8 +23,10 @@ def original_fragment_ratio(text: str) -> float:
     short_tokens = sum(1 for token in tokens if len(token) <= 2)
     return short_tokens / max(1, len(tokens))
 
+
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+")
 SPLIT_HINT_PATTERN = re.compile(r"\b[iı]p\s+le\s+mantasyon\b")
+
 
 def optimized_looks_fragmented(text: str) -> bool:
     if not text:
@@ -42,6 +46,7 @@ def optimized_looks_fragmented(text: str) -> bool:
     split_hint = bool(SPLIT_HINT_PATTERN.search(lower_text))
     return short_ratio >= 0.35 or split_hint
 
+
 def optimized_fragment_ratio(text: str) -> float:
     tokens = TOKEN_PATTERN.findall((text or "").lower())
     if not tokens:
@@ -49,13 +54,22 @@ def optimized_fragment_ratio(text: str) -> float:
     short_tokens = sum(1 for token in tokens if len(token) <= 2)
     return short_tokens / max(1, len(tokens))
 
-if __name__ == '__main__':
-    n = 100000
-    t_orig_lf = timeit.timeit("original_looks_fragmented(text)", globals=globals(), number=n)
-    t_opt_lf = timeit.timeit("optimized_looks_fragmented(text)", globals=globals(), number=n)
 
-    t_orig_fr = timeit.timeit("original_fragment_ratio(text)", globals=globals(), number=n)
-    t_opt_fr = timeit.timeit("optimized_fragment_ratio(text)", globals=globals(), number=n)
+if __name__ == "__main__":
+    n = 100000
+    t_orig_lf = timeit.timeit(
+        "original_looks_fragmented(text)", globals=globals(), number=n
+    )
+    t_opt_lf = timeit.timeit(
+        "optimized_looks_fragmented(text)", globals=globals(), number=n
+    )
+
+    t_orig_fr = timeit.timeit(
+        "original_fragment_ratio(text)", globals=globals(), number=n
+    )
+    t_opt_fr = timeit.timeit(
+        "optimized_fragment_ratio(text)", globals=globals(), number=n
+    )
 
     print(f"Original _looks_fragmented: {t_orig_lf:.4f} s")
     print(f"Optimized _looks_fragmented: {t_opt_lf:.4f} s")

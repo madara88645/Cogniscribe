@@ -12,14 +12,14 @@ import os
 import sys
 import types
 import wave
-import tempfile
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
 
 # ── Mock platform-specific modules before importing voice_paste ───────────────
+
 
 def _make_module(name, **attrs):
     mod = types.ModuleType(name)
@@ -30,9 +30,13 @@ def _make_module(name, **attrs):
 
 sys.modules.setdefault("winsound", _make_module("winsound", Beep=MagicMock()))
 sys.modules.setdefault("pyaudio", _make_module("pyaudio", PyAudio=MagicMock, paInt16=8))
-sys.modules.setdefault("pyautogui", _make_module("pyautogui", hotkey=MagicMock(), press=MagicMock()))
+sys.modules.setdefault(
+    "pyautogui", _make_module("pyautogui", hotkey=MagicMock(), press=MagicMock())
+)
 sys.modules.setdefault("pyperclip", _make_module("pyperclip", copy=MagicMock()))
-sys.modules.setdefault("keyboard", _make_module("keyboard", add_hotkey=MagicMock(), wait=MagicMock()))
+sys.modules.setdefault(
+    "keyboard", _make_module("keyboard", add_hotkey=MagicMock(), wait=MagicMock())
+)
 sys.modules.setdefault(
     "faster_whisper", _make_module("faster_whisper", WhisperModel=MagicMock())
 )
@@ -41,6 +45,7 @@ import voice_paste  # noqa: E402  (must come after mocking)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_wav_bytes(num_frames: int = 1600, sample_rate: int = 16000) -> bytes:
     """Return a minimal valid WAV byte-string filled with silence."""
@@ -55,6 +60,7 @@ def _make_wav_bytes(num_frames: int = 1600, sample_rate: int = 16000) -> bytes:
 
 # ── Config tests ──────────────────────────────────────────────────────────────
 
+
 class TestLoadConfig:
     def test_returns_defaults_when_no_file(self, tmp_path, monkeypatch):
         """load_config() returns a copy of DEFAULT_CONFIG when config.json is absent."""
@@ -66,7 +72,9 @@ class TestLoadConfig:
     def test_overrides_defaults_from_file(self, tmp_path, monkeypatch):
         """load_config() merges user values over defaults."""
         cfg_file = tmp_path / "config.json"
-        cfg_file.write_text(json.dumps({"language": "fr", "auto_enter": True}), encoding="utf-8")
+        cfg_file.write_text(
+            json.dumps({"language": "fr", "auto_enter": True}), encoding="utf-8"
+        )
         monkeypatch.setattr(voice_paste, "CONFIG_PATH", str(cfg_file))
         cfg = voice_paste.load_config()
         assert cfg["language"] == "fr"
@@ -93,6 +101,7 @@ class TestLoadConfig:
 
 
 # ── RMS calculation tests ─────────────────────────────────────────────────────
+
 
 class TestGetRms:
     def test_silence_returns_zero(self):
@@ -124,6 +133,7 @@ class TestGetRms:
 
 
 # ── Audio temp-file tests ─────────────────────────────────────────────────────
+
 
 class TestSaveAudioTemp:
     def test_creates_wav_file(self):
@@ -162,15 +172,22 @@ class TestSaveAudioTemp:
 
 # ── paste_to_active_window tests ──────────────────────────────────────────────
 
+
 class TestPasteToActiveWindow:
     def setup_method(self):
-        self.config = {**voice_paste.DEFAULT_CONFIG, "paste_delay": 0, "auto_enter": False}
+        self.config = {
+            **voice_paste.DEFAULT_CONFIG,
+            "paste_delay": 0,
+            "auto_enter": False,
+        }
 
     def test_copies_text_to_clipboard(self):
         mock_copy = MagicMock()
         mock_hotkey = MagicMock()
-        with patch.object(sys.modules["pyperclip"], "copy", mock_copy), \
-             patch.object(sys.modules["pyautogui"], "hotkey", mock_hotkey):
+        with (
+            patch.object(sys.modules["pyperclip"], "copy", mock_copy),
+            patch.object(sys.modules["pyautogui"], "hotkey", mock_hotkey),
+        ):
             voice_paste.paste_to_active_window("hello world", self.config)
         mock_copy.assert_called_once_with("hello world")
         mock_hotkey.assert_called_once_with("ctrl", "v")
@@ -178,8 +195,10 @@ class TestPasteToActiveWindow:
     def test_no_paste_for_empty_string(self):
         mock_copy = MagicMock()
         mock_hotkey = MagicMock()
-        with patch.object(sys.modules["pyperclip"], "copy", mock_copy), \
-             patch.object(sys.modules["pyautogui"], "hotkey", mock_hotkey):
+        with (
+            patch.object(sys.modules["pyperclip"], "copy", mock_copy),
+            patch.object(sys.modules["pyautogui"], "hotkey", mock_hotkey),
+        ):
             voice_paste.paste_to_active_window("", self.config)
         mock_copy.assert_not_called()
         mock_hotkey.assert_not_called()
@@ -193,22 +212,27 @@ class TestPasteToActiveWindow:
     def test_auto_enter_presses_enter(self):
         mock_press = MagicMock()
         cfg = {**self.config, "auto_enter": True}
-        with patch.object(sys.modules["pyperclip"], "copy", MagicMock()), \
-             patch.object(sys.modules["pyautogui"], "hotkey", MagicMock()), \
-             patch.object(sys.modules["pyautogui"], "press", mock_press):
+        with (
+            patch.object(sys.modules["pyperclip"], "copy", MagicMock()),
+            patch.object(sys.modules["pyautogui"], "hotkey", MagicMock()),
+            patch.object(sys.modules["pyautogui"], "press", mock_press),
+        ):
             voice_paste.paste_to_active_window("hi", cfg)
         mock_press.assert_called_once_with("enter")
 
     def test_no_auto_enter_when_disabled(self):
         mock_press = MagicMock()
-        with patch.object(sys.modules["pyperclip"], "copy", MagicMock()), \
-             patch.object(sys.modules["pyautogui"], "hotkey", MagicMock()), \
-             patch.object(sys.modules["pyautogui"], "press", mock_press):
+        with (
+            patch.object(sys.modules["pyperclip"], "copy", MagicMock()),
+            patch.object(sys.modules["pyautogui"], "hotkey", MagicMock()),
+            patch.object(sys.modules["pyautogui"], "press", mock_press),
+        ):
             voice_paste.paste_to_active_window("hi", self.config)
         mock_press.assert_not_called()
 
 
 # ── Constants sanity checks ───────────────────────────────────────────────────
+
 
 class TestConstants:
     def test_sample_rate(self):
@@ -222,8 +246,15 @@ class TestConstants:
 
     def test_default_config_has_required_keys(self):
         required = {
-            "language", "hotkey", "auto_enter", "paste_delay",
-            "beep_on_ready", "exit_hotkey", "whisper_model",
-            "silence_threshold", "silence_duration", "max_record_seconds",
+            "language",
+            "hotkey",
+            "auto_enter",
+            "paste_delay",
+            "beep_on_ready",
+            "exit_hotkey",
+            "whisper_model",
+            "silence_threshold",
+            "silence_duration",
+            "max_record_seconds",
         }
         assert required.issubset(voice_paste.DEFAULT_CONFIG.keys())

@@ -6,8 +6,8 @@ export default defineConfig({
   base: "./",
   server: {
     host: "127.0.0.1",
-    port: 5173,
-    strictPort: true,
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 5173,
+    strictPort: false,
   },
   build: {
     outDir: "dist",
