@@ -1,11 +1,13 @@
 """Basic smoke tests for config_manager and audio_processing."""
 
 import copy
+import json
 from typing import Any
 
 import numpy as np
 import pytest
 
+import config_manager
 from audio_processing import get_rms, preprocess_audio_bytes
 from config_manager import (
     DEFAULT_CONFIG,
@@ -14,6 +16,7 @@ from config_manager import (
     _sanitize_hints,
     get_profile_decode_options,
     load_config,
+    save_config,
 )
 
 
@@ -160,3 +163,38 @@ class TestLoadConfig:
         monkeypatch.setenv("VOICE_PASTE_STT__DEVICE", "cpu")
         cfg = load_config()
         assert cfg["stt"]["device"] == "cpu"
+
+
+class TestSaveConfig:
+    def test_writes_valid_json(self, tmp_path, monkeypatch):
+        cfg_file = tmp_path / "config.json"
+        monkeypatch.setattr(config_manager, "CONFIG_PATH", str(cfg_file))
+        data = {"language": "fr", "auto_enter": False}
+        save_config(data)
+        saved = json.loads(cfg_file.read_text(encoding="utf-8"))
+        assert saved == data
+
+    def test_preserves_unicode(self, tmp_path, monkeypatch):
+        cfg_file = tmp_path / "config.json"
+        monkeypatch.setattr(config_manager, "CONFIG_PATH", str(cfg_file))
+        data = {"note": "こんにちは", "stt": {"term_hints": ["proje", "geliştirme"]}}
+        save_config(data)
+        saved = json.loads(cfg_file.read_text(encoding="utf-8"))
+        assert saved["note"] == "こんにちは"
+        assert saved["stt"]["term_hints"] == ["proje", "geliştirme"]
+
+    def test_round_trip(self, tmp_path, monkeypatch):
+        cfg_file = tmp_path / "config.json"
+        monkeypatch.setattr(config_manager, "CONFIG_PATH", str(cfg_file))
+        # Start with default and modify
+        original = copy.deepcopy(DEFAULT_CONFIG)
+        original["language"] = "de"
+        original["stt"]["primary_language"] = "de"
+        original["ui"]["theme"]["mode"] = "dark"
+        save_config(original)
+
+        # Load it back
+        loaded = load_config()
+        assert loaded["language"] == "de"
+        assert loaded["stt"]["primary_language"] == "de"
+        assert loaded["ui"]["theme"]["mode"] == "dark"
