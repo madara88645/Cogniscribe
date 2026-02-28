@@ -1,7 +1,19 @@
 import math
+from dataclasses import dataclass
+
 import numpy as np
 
 INT16_MAX = 32768.0
+
+
+@dataclass
+class SilenceCalibrationConfig:
+    sample_rate: int
+    chunk_size: int
+    calibration_seconds: float
+    adaptive_multiplier: float
+    fallback_threshold: int
+    min_threshold: int
 
 
 def get_rms(audio_data: np.ndarray) -> float:
@@ -57,11 +69,6 @@ def highpass_filter(
         # This avoids numpy overhead for scalar assignment in loop
         x_list = x.tolist()
         y_list = [0.0] * len(x_list)
-    # Use python list for slightly faster scalar iteration in pure python
-    # This avoids numpy overhead for scalar assignment in loop
-    x_list = x.tolist()
-    y_arr = np.zeros(len(x_list), dtype=np.float32)
-
         prev_y = 0.0
         prev_x = x_list[0] if len(x_list) > 0 else 0.0
 
@@ -72,13 +79,6 @@ def highpass_filter(
             prev_x = cur_x
 
         return np.array(y_list, dtype=np.float32)
-    for i, cur_x in enumerate(x_list):
-        cur_y = alpha * (prev_y + cur_x - prev_x)
-        y_arr[i] = cur_y
-        prev_y = cur_y
-        prev_x = cur_x
-
-    return y_arr
 
 
 def normalize_to_dbfs(audio_data: np.ndarray, target_dbfs: float) -> np.ndarray:
@@ -156,28 +156,22 @@ def preprocess_audio_bytes(
     return int16_to_bytes(processed)
 
 
-def calibrate_silence_threshold(
-    stream,
-    sample_rate: int,
-    chunk_size: int,
-    calibration_seconds: float,
-    adaptive_multiplier: float,
-    fallback_threshold: int,
-    min_threshold: int,
-) -> int:
-    if calibration_seconds <= 0:
-        return int(fallback_threshold)
-    total_chunks = max(1, int((calibration_seconds * sample_rate) / chunk_size))
+def calibrate_silence_threshold(stream, config: SilenceCalibrationConfig) -> int:
+    if config.calibration_seconds <= 0:
+        return int(config.fallback_threshold)
+    total_chunks = max(
+        1, int((config.calibration_seconds * config.sample_rate) / config.chunk_size)
+    )
     values = []
     for _ in range(total_chunks):
         try:
-            chunk = stream.read(chunk_size, exception_on_overflow=False)
+            chunk = stream.read(config.chunk_size, exception_on_overflow=False)
             rms = get_rms(np.frombuffer(chunk, dtype=np.int16))
             values.append(rms)
         except Exception:
             break
     if not values:
-        return int(fallback_threshold)
+        return int(config.fallback_threshold)
     ambient = float(np.percentile(values, 90))
-    adaptive = int(max(min_threshold, ambient * adaptive_multiplier))
-    return int(max(fallback_threshold, adaptive))
+    adaptive = int(max(config.min_threshold, ambient * config.adaptive_multiplier))
+    return int(max(config.fallback_threshold, adaptive))
