@@ -3,18 +3,22 @@ import numpy as np
 
 INT16_MAX = 32768.0
 
+
 def get_rms(audio_data: np.ndarray) -> float:
     if len(audio_data) == 0:
         return 0.0
     x = audio_data.astype(np.float32)
     return float(np.sqrt(np.mean(x * x)))
 
+
 def bytes_to_int16(audio_bytes: bytes) -> np.ndarray:
     return np.frombuffer(audio_bytes, dtype=np.int16).copy()
+
 
 def int16_to_bytes(audio_data: np.ndarray) -> bytes:
     clipped = np.clip(audio_data, -32768, 32767).astype(np.int16)
     return clipped.tobytes()
+
 
 def highpass_filter(
     audio_data: np.ndarray, sample_rate: int, cutoff_hz: float
@@ -51,6 +55,10 @@ def highpass_filter(
         # This avoids numpy overhead for scalar assignment in loop
         x_list = x.tolist()
         y_list = [0.0] * len(x_list)
+    # Use python list for slightly faster scalar iteration in pure python
+    # This avoids numpy overhead for scalar assignment in loop
+    x_list = x.tolist()
+    y_arr = np.zeros(len(x_list), dtype=np.float32)
 
         prev_y = 0.0
         prev_x = x_list[0] if len(x_list) > 0 else 0.0
@@ -62,6 +70,14 @@ def highpass_filter(
             prev_x = cur_x
 
         return np.array(y_list, dtype=np.float32)
+    for i, cur_x in enumerate(x_list):
+        cur_y = alpha * (prev_y + cur_x - prev_x)
+        y_arr[i] = cur_y
+        prev_y = cur_y
+        prev_x = cur_x
+
+    return y_arr
+
 
 def normalize_to_dbfs(audio_data: np.ndarray, target_dbfs: float) -> np.ndarray:
     if audio_data.dtype == np.float32:
@@ -85,6 +101,7 @@ def normalize_to_dbfs(audio_data: np.ndarray, target_dbfs: float) -> np.ndarray:
     x *= gain
     return x
 
+
 def suppress_noise(audio_data: np.ndarray, sample_rate: int) -> np.ndarray:
     if audio_data.dtype == np.float32:
         x = audio_data
@@ -101,6 +118,7 @@ def suppress_noise(audio_data: np.ndarray, sample_rate: int) -> np.ndarray:
     # In-place modification
     x[np.abs(x) < threshold] = 0.0
     return x
+
 
 def preprocess_audio_bytes(
     audio_bytes: bytes,
@@ -128,6 +146,7 @@ def preprocess_audio_bytes(
 
     # 4. Convert back to int16 bytes
     return int16_to_bytes(processed)
+
 
 def calibrate_silence_threshold(
     stream,
