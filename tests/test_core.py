@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from audio_processing import get_rms, preprocess_audio_bytes
+from audio_processing import bytes_to_int16, get_rms, preprocess_audio_bytes
 from config_manager import (
     DEFAULT_CONFIG,
     _coerce_language,
@@ -160,3 +160,26 @@ class TestLoadConfig:
         monkeypatch.setenv("VOICE_PASTE_STT__DEVICE", "cpu")
         cfg = load_config()
         assert cfg["stt"]["device"] == "cpu"
+
+
+class TestBytesToInt16:
+    def test_basic_conversion(self):
+        expected = np.array([1, -2, 32767, -32768], dtype=np.int16)
+        audio_bytes = expected.tobytes()
+        result = bytes_to_int16(audio_bytes)
+        np.testing.assert_array_equal(result, expected)
+        assert result.dtype == np.int16
+
+    def test_empty_bytes(self):
+        audio_bytes = b""
+        result = bytes_to_int16(audio_bytes)
+        assert len(result) == 0
+        assert result.dtype == np.int16
+
+    def test_specific_values(self):
+        # Little endian int16: \x01\x00 -> 1, \x00\x01 -> 256
+        audio_bytes = b"\x01\x00\x00\x01"
+        result = bytes_to_int16(audio_bytes)
+        expected = np.array([1, 256], dtype=np.int16)
+        np.testing.assert_array_equal(result, expected)
+        assert result.dtype == np.int16
