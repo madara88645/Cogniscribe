@@ -1,12 +1,16 @@
 """Basic smoke tests for config_manager and audio_processing."""
 
 import copy
+import io
+import sys
+import types
 from typing import Any
 
 import numpy as np
 import pytest
 
-from audio_processing import get_rms, preprocess_audio_bytes
+import config_manager
+from audio_processing import get_rms, preprocess_audio_bytes, suppress_noise
 from config_manager import (
     DEFAULT_CONFIG,
     _coerce_language,
@@ -160,3 +164,138 @@ class TestLoadConfig:
         monkeypatch.setenv("VOICE_PASTE_STT__DEVICE", "cpu")
         cfg = load_config()
         assert cfg["stt"]["device"] == "cpu"
+
+
+class TestBackendHandleRequest:
+    @pytest.fixture
+    def backend_module(self, monkeypatch):
+        monkeypatch.setitem(
+            sys.modules, "keyboard", types.SimpleNamespace(send=lambda *_: None)
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "pyaudio",
+            types.SimpleNamespace(paInt16=8, PyAudio=lambda: None),
+        )
+        monkeypatch.setitem(
+            sys.modules,
+            "pyautogui",
+            types.SimpleNamespace(hotkey=lambda *_: None, press=lambda *_: None),
+        )
+        monkeypatch.setitem(
+            sys.modules, "pyperclip", types.SimpleNamespace(copy=lambda *_: None)
+        )
+
+        import backend_service
+
+        default_cfg = copy.deepcopy(DEFAULT_CONFIG)
+
+        class DummySTTService:
+            def __init__(self, *_args, **_kwargs):
+                self.reloaded_with = None
+
+            def reload(self, cfg):
+                self.reloaded_with = cfg
+
+        monkeypatch.setattr(backend_service, "STTService", DummySTTService)
+        monkeypatch.setattr(
+            backend_service, "load_config", lambda: copy.deepcopy(default_cfg)
+        )
+        return backend_service
+
+    def test_ping(self, backend_module):
+        service = backend_module.BackendService()
+        responses = []
+        service.respond = lambda req_id, ok, result=None, error=None: responses.append(
+            {"id": req_id, "ok": ok, "result": result, "error": error}
+        )
+
+        service._handle_request({"method": "ping", "id": 1})
+        assert responses[0]["ok"] is True
+        assert responses[0]["result"] == {"pong": True}
+
+    def test_get_config_returns_dict(self, backend_module):
+        service = backend_module.BackendService()
+        responses = []
+        service.respond = lambda req_id, ok, result=None, error=None: responses.append(
+            result
+        )
+
+        service._handle_request({"method": "get_config", "id": 2})
+        assert isinstance(responses[0], dict)
+        for key in ("stt", "audio", "telemetry"):
+            assert key in responses[0]
+
+    def test_update_config_deep_merges(self, backend_module, monkeypatch):
+        service = backend_module.BackendService()
+        saved_cfg = {}
+
+        monkeypatch.setattr(
+            backend_module,
+            "save_config",
+            lambda cfg: saved_cfg.setdefault("value", copy.deepcopy(cfg)),
+        )
+        monkeypatch.setattr(backend_module, "load_config", lambda: saved_cfg["value"])
+
+        patch = {"stt": {"device": "cpu"}}
+        service._handle_request({"method": "update_config", "id": 3, "params": patch})
+
+        assert saved_cfg["value"]["stt"]["device"] == "cpu"
+        assert saved_cfg["value"]["stt"]["backend"] == DEFAULT_CONFIG["stt"]["backend"]
+
+    def test_shutdown_sets_running_false(self, backend_module):
+        service = backend_module.BackendService()
+        service._handle_request({"method": "shutdown", "id": 4})
+        assert service.running is False
+
+    def test_unknown_method_responds_error(self, backend_module):
+        service = backend_module.BackendService()
+        responses = []
+        service.respond = lambda req_id, ok, result=None, error=None: responses.append(
+            {"ok": ok, "error": error}
+        )
+
+        service._handle_request({"method": "does_not_exist", "id": 5})
+        assert responses[0]["ok"] is False
+        assert "error" in responses[0]
+        assert responses[0]["error"]["code"] == "request_failed"
+
+    def test_invalid_json_emits_runtime_error(self, backend_module, monkeypatch):
+        service = backend_module.BackendService()
+        events = []
+        service.emit = lambda event, data: events.append({"event": event, "data": data})
+
+        monkeypatch.setattr(sys, "stdin", io.StringIO("{not-json}\n"))
+        service.run()
+
+        assert events
+        assert events[-1]["event"] == "runtime_error"
+        assert "Invalid JSON" in events[-1]["data"]["message"]
+
+
+class TestSaveConfig:
+    def test_save_and_reload_roundtrip(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "cfg.json"
+        monkeypatch.setattr(config_manager, "CONFIG_PATH", str(config_path))
+
+        cfg = copy.deepcopy(DEFAULT_CONFIG)
+        cfg["language"] = "en"
+        cfg["stt"]["device"] = "cpu"
+        cfg["audio"]["noise_suppression"] = True
+
+        config_manager.save_config(cfg)
+        loaded = config_manager.load_config()
+
+        assert loaded == cfg
+
+
+class TestSuppressNoise:
+    def test_silence_unchanged(self):
+        data = np.zeros(1600, dtype=np.float32)
+        result = suppress_noise(data.copy(), sample_rate=16000)
+        assert np.max(np.abs(result)) <= 1e-6
+
+    def test_above_threshold_preserved(self):
+        data = np.full(1600, 5000.0, dtype=np.float32)
+        result = suppress_noise(data.copy(), sample_rate=16000)
+        assert np.allclose(result, data, atol=1e-6)
