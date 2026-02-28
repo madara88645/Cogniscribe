@@ -1,5 +1,4 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { RecordButton } from "../components/RecordButton";
 
@@ -49,8 +48,7 @@ describe("RecordButton", () => {
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("calls onClick when clicked", async () => {
-    const user = userEvent.setup();
+  it("calls onClick when clicked", () => {
     const handleClick = vi.fn();
     render(
       <RecordButton
@@ -59,7 +57,7 @@ describe("RecordButton", () => {
         onClick={handleClick}
       />
     );
-    await user.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button"));
     expect(handleClick).toHaveBeenCalledOnce();
   });
 });
