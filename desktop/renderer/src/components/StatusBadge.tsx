@@ -16,7 +16,11 @@ const STATUS_MAP: Record<StatusName, { label: string; className: string }> = {
 export function StatusBadge({ status }: Props) {
   const item = STATUS_MAP[status];
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.12em] shadow-[0_0_18px_rgba(42,168,255,0.12)] ${item.className}`}>
+    <span
+      role="status"
+      aria-live="polite"
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.12em] shadow-[0_0_18px_rgba(42,168,255,0.12)] ${item.className}`}
+    >
       {item.label}
     </span>
   );
