@@ -32,18 +32,44 @@ def highpass_filter(
     else:
         x = audio_data.astype(np.float32)
 
+    if len(x) == 0:
+        return np.array([], dtype=np.float32)
+
     dt = 1.0 / float(sample_rate)
     rc = 1.0 / (2.0 * math.pi * float(cutoff_hz))
     alpha = rc / (rc + dt)
 
+    try:
+        import scipy.signal
+
+        b = [alpha, -alpha]
+        a = [1.0, -alpha]
+
+        # Use precise initial conditions to match the python loop behavior exactly
+        zi = scipy.signal.lfiltic(b, a, y=[], x=[x[0]])
+        y, _ = scipy.signal.lfilter(b, a, x, zi=zi)
+
+        return y.astype(np.float32)
+    except ImportError:
+        # Use python list for slightly faster scalar iteration in pure python
+        # This avoids numpy overhead for scalar assignment in loop
+        x_list = x.tolist()
+        y_list = [0.0] * len(x_list)
     # Use python list for slightly faster scalar iteration in pure python
     # This avoids numpy overhead for scalar assignment in loop
     x_list = x.tolist()
     y_arr = np.zeros(len(x_list), dtype=np.float32)
 
-    prev_y = 0.0
-    prev_x = x_list[0] if len(x_list) > 0 else 0.0
+        prev_y = 0.0
+        prev_x = x_list[0] if len(x_list) > 0 else 0.0
 
+        for i, cur_x in enumerate(x_list):
+            cur_y = alpha * (prev_y + cur_x - prev_x)
+            y_list[i] = cur_y
+            prev_y = cur_y
+            prev_x = cur_x
+
+        return np.array(y_list, dtype=np.float32)
     for i, cur_x in enumerate(x_list):
         cur_y = alpha * (prev_y + cur_x - prev_x)
         y_arr[i] = cur_y
