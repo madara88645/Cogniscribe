@@ -10,7 +10,9 @@ def get_rms(audio_data: np.ndarray) -> float:
     return float(np.sqrt(np.mean(x * x)))
 
 def bytes_to_int16(audio_bytes: bytes) -> np.ndarray:
-    return np.frombuffer(audio_bytes, dtype=np.int16).copy()
+    # return without .copy() since converting to float32 inherently creates a copy,
+    # and avoiding this intermediate copy saves memory and time.
+    return np.frombuffer(audio_bytes, dtype=np.int16)
 
 def int16_to_bytes(audio_data: np.ndarray) -> bytes:
     clipped = np.clip(audio_data, -32768, 32767).astype(np.int16)
@@ -79,8 +81,14 @@ def suppress_noise(audio_data: np.ndarray, sample_rate: int) -> np.ndarray:
     if len(x) == 0:
         return x
 
-    head = x[: max(int(0.25 * sample_rate), 1)]
-    floor = np.percentile(np.abs(head), 70)
+    head_len = max(int(0.25 * sample_rate), 1)
+    head_abs = np.abs(x[:head_len])
+
+    # O(N) percentile calculation using partition instead of O(N log N) full sort
+    k = int(len(head_abs) * 0.70)
+    head_abs.partition(k)
+    floor = head_abs[k]
+
     threshold = max(40.0, floor * 1.5)
 
     # In-place modification
