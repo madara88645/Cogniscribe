@@ -1,0 +1,4 @@
+## 2024-05-24 - Empty states in desktop dictation tools
+
+**Learning:** When dealing with dynamic background tools like dictation apps, initial loading states that expose numeric defaults (like a 0% confidence rate or an empty box) can create immediate confusion for the user, lowering initial trust.
+**Action:** Always provide an explicit "empty state" with clear instructions (e.g., "Press record to start dictating") and hide context-specific UI elements (like confidence metrics) until they hold valid, relevant data. Additionally, ensure live app status badges are properly marked with `role="status"` and `aria-live="polite"` so screen readers can relay real-time system states.
